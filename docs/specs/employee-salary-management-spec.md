@@ -6,11 +6,11 @@ A web app for ACME's HR Manager to replace spreadsheet-based salary tracking: se
 ## Slice 0: Scaffold + Deploy (walking skeleton, before any feature work)
 Empty Rails 8 API app and empty React (Vite) app, wired together, both deployed live — proves the deployment pipeline works before any feature logic exists.
 
-- [ ] Rails 8 API app created, runs locally (`rails s` or equivalent), responds to a basic health-check route
-- [ ] React (Vite) app created, runs locally (`npm run dev`), renders a placeholder page
-- [ ] React app successfully calls the Rails API health-check route and displays the response (proves the two apps are wired together, not just running side by side)
-- [ ] Rails API is deploy-ready (deployment config committed — e.g. Dockerfile/`render.yaml`/Procfile as appropriate for the chosen host) and documented in the README with exact deploy steps
-- [ ] React app is deploy-ready (build config + env-based API base URL, no hardcoded localhost) and documented in the README with exact deploy steps
+- [x] Rails 8 API app created, runs locally (`rails s` or equivalent), responds to a basic health-check route
+- [x] React (Vite) app created, runs locally (`npm run dev`), renders a placeholder page
+- [x] React app successfully calls the Rails API health-check route and displays the response (proves the two apps are wired together, not just running side by side)
+- [x] Rails API is deploy-ready (deployment config committed — e.g. Dockerfile/`render.yaml`/Procfile as appropriate for the chosen host) and documented in the README with exact deploy steps
+- [x] React app is deploy-ready (build config + env-based API base URL, no hardcoded localhost) and documented in the README with exact deploy steps
 - [ ] Developer performs the actual live deploy (external account/credentials not available to the coding agent) and adds both live URLs to the README once done
 
 <!-- -------- bee-comment -------- -->
