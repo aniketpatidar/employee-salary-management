@@ -22,19 +22,19 @@ Empty Rails 8 API app and empty React (Vite) app, wired together, both deployed 
 ## Slice 1: Authentication + Seed Data (walking skeleton)
 The foundation everything else sits behind: a real login gate and a realistic 10,000-employee dataset to build and test against.
 
-- [ ] HR Manager can log in with email and password
-- [ ] Login form shows inline validation errors when email or password is left blank
-- [ ] Shows a generic "Invalid email or password" message on failed login (does not reveal which field was wrong, no lockout/rate-limiting)
-- [ ] Unauthenticated visitors are redirected to the login page when attempting to access any employee page
-- [ ] Logged-in HR Manager can log out, ending the session (session row invalidated/deleted, cookie cleared) and returning to the login page
-- [ ] HR Manager can request a password reset via email address; a reset link is generated (token-based, 15-minute expiry, per Rails 8 generator defaults)
-- [ ] Reset link lets the HR Manager set a new password, after which the old password no longer works
-- [ ] Shows a generic confirmation message after requesting a reset regardless of whether the email matches an account (no account enumeration)
-- [ ] Expired or invalid reset tokens show an error instead of allowing a password change
-- [ ] Seed script populates the database with 10,000 employee records spanning multiple countries/currencies, departments, roles, and employment types, using only values from the predefined lists (see Enum Fields below)
-- [ ] Seed script produces a mix of active and inactive employees (so status filtering is testable from day one)
-- [ ] Seed script is re-runnable in a fresh dev/test database without manual cleanup steps
-- [ ] Seed script creates exactly one HR Manager login credential (alongside the 10,000 employee records), documented in the README for reviewer login — this is the only way an HR Manager account is created; there is no self-registration/signup flow
+- [x] HR Manager can log in with email and password
+- [x] Login form shows inline validation errors when email or password is left blank
+- [x] Shows a generic "Invalid email or password" message on failed login (does not reveal which field was wrong, no lockout/rate-limiting)
+- [x] Unauthenticated visitors are redirected to the login page when attempting to access any employee page
+- [x] Logged-in HR Manager can log out, ending the session (session row invalidated/deleted, cookie cleared) and returning to the login page
+- [x] HR Manager can request a password reset via email address; a reset link is generated (token-based, 15-minute expiry, per Rails 8 generator defaults)
+- [x] Reset link lets the HR Manager set a new password, after which the old password no longer works
+- [x] Shows a generic confirmation message after requesting a reset regardless of whether the email matches an account (no account enumeration)
+- [x] Expired or invalid reset tokens show an error instead of allowing a password change
+- [x] Seed script populates the database with 10,000 employee records spanning multiple countries/currencies, departments, roles, and employment types, using only values from the predefined lists (see Enum Fields below)
+- [x] Seed script produces a mix of active and inactive employees (so status filtering is testable from day one)
+- [x] Seed script is re-runnable in a fresh dev/test database without manual cleanup steps
+- [x] Seed script creates exactly one HR Manager login credential (alongside the 10,000 employee records), documented in the README for reviewer login — this is the only way an HR Manager account is created; there is no self-registration/signup flow
 
 ### Auth Mechanism (explicit, not "Rails built-in auth" in the abstract)
 - Generated via Rails 8's `bin/rails generate authentication` scaffold — not Devise, not a hand-rolled auth system, not a third-party identity provider.

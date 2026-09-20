@@ -19,8 +19,16 @@ docs/       Spec, discovery doc, ADRs
 
 This slice proves the walking skeleton: both apps run locally, the React app
 calls the Rails health-check route and displays the result, and both apps are
-deploy-ready. No feature logic (auth, employees, etc.) exists yet — that
-starts in Slice 1.
+deploy-ready.
+
+## Slice 1 status
+
+Real authentication (Rails 8's `bin/rails generate authentication` scaffold,
+DB-backed session cookie — not JWT/bearer tokens), a protected-route wrapper
+on the frontend, and the seeded 10,000-employee dataset. See
+`docs/adr/0001-enum-columns-for-department-role-country.md` and
+`docs/adr/0002-session-cookie-authentication.md` for the design decisions
+behind the data model and the auth mechanism.
 
 ## Running locally
 
@@ -33,11 +41,33 @@ starts in Slice 1.
 ```
 cd backend
 bundle install
+bin/rails db:prepare   # creates and migrates storage/development.sqlite3
+bin/rails db:seed      # seeds the HR Manager login + 10,000 employees (safe to re-run)
 bin/rails server -p 3000
 ```
 
 Visit `http://localhost:3000/health` — should return
 `{"status":"ok","service":"employee-salary-management-api"}`.
+
+#### Reviewer login (seeded HR Manager account)
+
+The seed script creates exactly one login — there is no signup flow:
+
+- **Email**: `hr.manager@acme.test`
+- **Password**: `SalaryAdmin!2024`
+
+Re-running `bin/rails db:seed` resets this account's password back to the
+value above and truncates/regenerates the 10,000 employee rows (see
+`backend/db/seeds.rb` for why truncate-and-reseed was chosen over
+`find_or_create_by` at this volume).
+
+#### Password reset emails in development
+
+No real SMTP is configured (out of scope for this build — see spec).
+`config.action_mailer.delivery_method = :file` writes every sent email to
+`backend/tmp/mails/<recipient-address>` as a plain-text/HTML file — open the
+most recent file there to read a password-reset link after requesting a
+reset from the frontend.
 
 ### Frontend (React + Vite)
 
@@ -48,9 +78,13 @@ npm install
 npm run dev
 ```
 
-Visit `http://localhost:5173` — the page shows "API health check: ok" once it
-successfully calls the Rails backend. If it shows "unreachable", confirm the
-backend is running on port 3000.
+Visit `http://localhost:5173`:
+- `/` — the Slice 0 health-check page (also links to the login page).
+- `/login` — HR Manager login (use the reviewer credentials above).
+- `/passwords/new` — request a password reset link.
+- `/passwords/:token/edit` — set a new password from a reset link.
+- `/dashboard` — protected; redirects to `/login` if not authenticated. Full
+  employee list/search/filter/CRUD/pay-insights UI arrives in Slices 2–4.
 
 The frontend never hardcodes the API host — it reads `VITE_API_BASE_URL` from
 the environment (`frontend/.env` locally, a platform env var in production),
@@ -101,7 +135,12 @@ A `render.yaml` blueprint at the repo root defines both services:
    from the Render dashboard so the values take effect.
 6. Verify: visit the backend's `/health` route directly, then visit the
    frontend URL and confirm it shows "API health check: ok".
-7. Add the live URLs here once deployed:
+7. Seed the production database once, via the Render Shell on the
+   `employee-salary-management-api` service: `bin/rails db:seed`. This is a
+   manual one-off step (Render's `docker-entrypoint` only runs
+   `db:prepare`/migrations on boot, not `db:seed`) — it creates the reviewer
+   HR Manager login and the 10,000 employee records. Safe to re-run.
+8. Add the live URLs here once deployed:
    - Backend: `<TODO: paste live Render URL>`
    - Frontend: `<TODO: paste live Render URL>`
 

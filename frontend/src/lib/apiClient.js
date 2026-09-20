@@ -11,3 +11,32 @@ export async function fetchHealthCheck() {
 
   return response.json()
 }
+
+export class ApiError extends Error {
+  constructor(message, { status, data } = {}) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.data = data
+  }
+}
+
+export async function apiRequest(path, { method = 'GET', body } = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    credentials: 'include',
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+
+  const data = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new ApiError(data?.error ?? `Request failed with status ${response.status}`, {
+      status: response.status,
+      data,
+    })
+  }
+
+  return data
+}
