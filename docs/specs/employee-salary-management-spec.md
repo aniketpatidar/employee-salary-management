@@ -3,6 +3,22 @@
 ## Overview
 A web app for ACME's HR Manager to replace spreadsheet-based salary tracking: search/filter 10,000 employee salary records, manage them via basic CRUD, and view aggregate pay insights (avg/median by department, country, role), gated behind a single-role login. Rails 8 API backend + React (Vite) frontend, SQLite database.
 
+## Slice 0: Scaffold + Deploy (walking skeleton, before any feature work)
+Empty Rails 8 API app and empty React (Vite) app, wired together, both deployed live — proves the deployment pipeline works before any feature logic exists.
+
+- [ ] Rails 8 API app created, runs locally (`rails s` or equivalent), responds to a basic health-check route
+- [ ] React (Vite) app created, runs locally (`npm run dev`), renders a placeholder page
+- [ ] React app successfully calls the Rails API health-check route and displays the response (proves the two apps are wired together, not just running side by side)
+- [ ] Rails API deployed live (e.g. Render/Railway) and reachable at a public URL
+- [ ] React app deployed live and reachable at a public URL, successfully calling the deployed API (not just localhost)
+- [ ] README documents both live URLs
+
+<!-- -------- bee-comment -------- -->
+> **@developer**: prior to feature slices, both frontend and backend apps should be up and running and deployed
+> **@bee**: Added Slice 0 — scaffold + deploy both apps as an empty walking skeleton before any feature work starts (Slice 1 onward). Confirmed as its own slice, not folded into Slice 1, per developer's follow-up answer.
+> - [ ] mark as resolved
+<!-- -------- /bee-comment -------- -->
+
 ## Slice 1: Authentication + Seed Data (walking skeleton)
 The foundation everything else sits behind: a real login gate and a realistic 10,000-employee dataset to build and test against.
 
