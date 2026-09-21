@@ -134,13 +134,11 @@ A `render.yaml` blueprint at the repo root defines both services:
    URLs (if not already known) and trigger a manual redeploy of each service
    from the Render dashboard so the values take effect.
 6. Verify: visit the backend's `/health` route directly, then visit the
-   frontend URL and confirm it shows "API health check: ok".
-7. Seed the production database once, via the Render Shell on the
-   `employee-salary-management-api` service: `bin/rails db:seed`. This is a
-   manual one-off step (Render's `docker-entrypoint` only runs
-   `db:prepare`/migrations on boot, not `db:seed`) — it creates the reviewer
-   HR Manager login and the 10,000 employee records. Safe to re-run.
-8. Add the live URLs here once deployed:
+   frontend URL and confirm it shows "API health check: ok". The first boot
+   automatically seeds the production database (see below) — the reviewer
+   HR Manager login and the 10,000 employee records should already be
+   present, no manual step required.
+7. Add the live URLs here once deployed:
    - Backend: `<TODO: paste live Render URL>`
    - Frontend: `<TODO: paste live Render URL>`
 
@@ -153,6 +151,13 @@ A `render.yaml` blueprint at the repo root defines both services:
 - The Render disk mounted at `/rails/storage` persists the SQLite files
   across deploys and restarts — without it, the database would reset on
   every deploy (Render's filesystem is otherwise ephemeral).
+- `bin/docker-entrypoint` also runs `bin/rails db:seed` automatically, but
+  only when the `employees` table is empty — i.e. genuinely the first boot.
+  On every subsequent boot/redeploy `Employee.count > 0`, so seeding is
+  skipped and the truncate-and-reseed in `EmployeeSeeder` never runs against
+  real data. `bin/rails db:seed` remains available to run by hand (e.g. via
+  Render Shell) for a manual reseed — that will still truncate and
+  regenerate the 10,000 employee rows, same as local dev.
 
 ## Environment variables
 

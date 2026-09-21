@@ -9,7 +9,7 @@ current_phase: "architecture decided"
 phase_spec: "docs/specs/employee-salary-management-spec.md — confirmed"
 architecture: "Rails MVC + feature-folder React — ActiveRecord scopes for CRUD, Employee.pay_insights class method for aggregates"
 tdd_plan: "not yet written"
-current_slice: "Slice 1 — verifying"
+current_slice: "Slice 2 — coding"
 ---
 
 # Bee State
@@ -34,7 +34,7 @@ docs/specs/employee-salary-management-spec.md — confirmed
 Rails MVC + feature-folder React — ActiveRecord scopes for CRUD, Employee.pay_insights class method for aggregates
 
 ## Current Slice
-Slice 1 — verifying
+Slice 2 — coding
 
 ## TDD Plan
 not yet written
@@ -44,3 +44,4 @@ n/a
 
 ## Slice Progress
 Slice 0: done
+Slice 1: done
