@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { logout } from './features/auth/api'
+import { EmployeeListPage } from './features/employees/EmployeeListPage'
 
 export function DashboardPage() {
   const navigate = useNavigate()
@@ -19,20 +19,14 @@ export function DashboardPage() {
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted/40 px-4 py-12">
-      <Card className="w-full max-w-sm text-center">
-        <CardHeader>
-          <CardTitle className="text-xl">Employee Salary Management</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <p className="text-sm text-muted-foreground">
-            You are logged in. Employee search, filtering, and CRUD arrive in later slices.
-          </p>
-          <Button type="button" onClick={handleLogout} disabled={isLoggingOut}>
-            {isLoggingOut ? 'Logging out…' : 'Log out'}
-          </Button>
-        </CardContent>
-      </Card>
+    <main className="mx-auto flex min-h-svh max-w-6xl flex-col gap-6 px-4 py-8">
+      <header className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Employee Salary Management</h1>
+        <Button type="button" variant="outline" onClick={handleLogout} disabled={isLoggingOut}>
+          {isLoggingOut ? 'Logging out…' : 'Log out'}
+        </Button>
+      </header>
+      <EmployeeListPage />
     </main>
   )
 }

@@ -117,16 +117,16 @@ Note Germany and France intentionally share EUR — the mapping is 1:1 per count
 All three enum lists (country, department, role) and the country→currency mapping are locked in — no further confirmation needed before implementation.
 
 ## Slice 2: Employee List — Search, Filter, Pagination
-- [ ] Employee List page shows a paginated table of employees (name, ID [database `id`], department, role, country, employment type, status)
-- [ ] List is paginated server-side (e.g. page + page size); browsing pages never loads the full 10,000-record dataset into the browser or into Ruby memory
-- [ ] Default list view shows only active employees
-- [ ] HR Manager can filter the list by department via a dropdown of the predefined department list (not free-text)
-- [ ] HR Manager can filter the list by country via a dropdown of the predefined country list (not free-text)
-- [ ] HR Manager can filter the list by role via a dropdown of the predefined role list (not free-text)
-- [ ] HR Manager can filter the list by employment type
-- [ ] HR Manager can filter the list by status, including explicitly viewing inactive employees
-- [ ] Filters can be combined (e.g. department=Sales AND country=Germany)
-- [ ] Shows an empty-state message when no employees match the current filters
+- [x] Employee List page shows a paginated table of employees (name, ID [database `id`], department, role, country, employment type, status)
+- [x] List is paginated server-side (e.g. page + page size); browsing pages never loads the full 10,000-record dataset into the browser or into Ruby memory
+- [x] Default list view shows only active employees
+- [x] HR Manager can filter the list by department via a dropdown of the predefined department list (not free-text)
+- [x] HR Manager can filter the list by country via a dropdown of the predefined country list (not free-text)
+- [x] HR Manager can filter the list by role via a dropdown of the predefined role list (not free-text)
+- [x] HR Manager can filter the list by employment type
+- [x] HR Manager can filter the list by status, including explicitly viewing inactive employees
+- [x] Filters can be combined (e.g. department=Sales AND country=Germany)
+- [x] Shows an empty-state message when no employees match the current filters
 
 ### API Shape
 ```

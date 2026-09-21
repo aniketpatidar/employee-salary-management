@@ -73,6 +73,12 @@ class Employee < ApplicationRecord
   belongs_to :manager, class_name: "Employee", optional: true
   has_many :direct_reports, class_name: "Employee", foreign_key: :manager_id, inverse_of: :manager, dependent: :nullify
 
+  scope :by_department, ->(value) { where(department: value) if value.present? }
+  scope :by_country, ->(value) { where(country: value) if value.present? }
+  scope :by_role, ->(value) { where(role: value) if value.present? }
+  scope :by_employment_type, ->(value) { where(employment_type: value) if value.present? }
+  scope :by_status, ->(value) { where(status: value) if value.present? }
+
   validates :full_name, presence: true
   validates :base_salary, presence: true, numericality: { greater_than: 0 }
   validates :hire_date, presence: true
