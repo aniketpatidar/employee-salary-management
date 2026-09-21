@@ -145,4 +145,18 @@ describe('apiRequest', () => {
 
     await expect(apiRequest('/employees')).rejects.toThrow('Request failed with status 500')
   })
+
+  it('builds a same-origin path with no double slash when the base URL is relative', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', '/api')
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ user: { email_address: 'a@b.com' } }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { apiRequest } = await import('./apiClient.js')
+    await apiRequest('/session')
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/session', expect.objectContaining({ method: 'GET' }))
+  })
 })

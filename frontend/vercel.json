@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://employee-salary-management-5xuo.onrender.com/:path*" },
+    { "source": "/((?!assets/|favicon|icons).*)", "destination": "/index.html" }
+  ]
+}
