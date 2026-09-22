@@ -102,4 +102,20 @@ describe('InsightsPage', () => {
       expect(screen.getByText('Unable to load pay insights right now.')).toBeInTheDocument(),
     )
   })
+
+  it('shows a filter-options error while still rendering the insights table', async () => {
+    fetchEmployeeFilterOptions.mockRejectedValue(new Error('network error'))
+    fetchPayInsights.mockResolvedValue(
+      insightsResponse({
+        groups: [{ group: 'engineering', currency: 'usd', count: 3, average: 90000, median: 88000 }],
+      }),
+    )
+
+    renderPage()
+
+    await waitFor(() =>
+      expect(screen.getByText('Unable to load filter options.')).toBeInTheDocument(),
+    )
+    expect(screen.getByText('Engineering')).toBeInTheDocument()
+  })
 })

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { logout } from '@/features/auth/api'
 import { AppLayout } from './AppLayout'
@@ -11,10 +11,18 @@ vi.mock('@/features/auth/api', () => ({
 
 function renderLayout() {
   return render(
-    <MemoryRouter>
-      <AppLayout>
-        <p>Page content</p>
-      </AppLayout>
+    <MemoryRouter initialEntries={['/dashboard']}>
+      <Routes>
+        <Route
+          path="/dashboard"
+          element={
+            <AppLayout>
+              <p>Page content</p>
+            </AppLayout>
+          }
+        />
+        <Route path="/login" element={<p>Login Page</p>} />
+      </Routes>
     </MemoryRouter>,
   )
 }
@@ -36,7 +44,7 @@ describe('AppLayout', () => {
     expect(screen.getByRole('link', { name: 'Pay Insights' })).toHaveAttribute('href', '/insights')
   })
 
-  it('calls the logout api when Log out is clicked', async () => {
+  it('navigates to the login route after logging out', async () => {
     logout.mockResolvedValue({})
     const user = userEvent.setup()
     renderLayout()
@@ -44,5 +52,6 @@ describe('AppLayout', () => {
     await user.click(screen.getByRole('button', { name: 'Log out' }))
 
     expect(logout).toHaveBeenCalled()
+    expect(await screen.findByText('Login Page')).toBeInTheDocument()
   })
 })
