@@ -25,8 +25,11 @@ jobs:
       - name: Security scan
         run: bin/brakeman --no-pager
 
+      - name: Prepare test database
+        run: bin/rails db:test:prepare
+
       - name: Test
-        run: bin/rails db:test:prepare test
+        run: bin/rails test
 
   frontend:
     runs-on: ubuntu-latest
