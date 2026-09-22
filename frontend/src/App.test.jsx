@@ -1,32 +1,51 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { fetchHealthCheck } from './lib/apiClient'
+import { fetchCurrentSession } from './features/auth/api'
 
-vi.mock('./lib/apiClient', () => ({
-  fetchHealthCheck: vi.fn(),
+vi.mock('./features/auth/api', () => ({
+  fetchCurrentSession: vi.fn(),
+  logout: vi.fn(),
 }))
+
+vi.mock('./features/employees/api', () => ({
+  fetchEmployees: vi.fn().mockResolvedValue({ employees: [], page: 1, per_page: 25, total_count: 0 }),
+  fetchEmployeeFilterOptions: vi.fn().mockResolvedValue({}),
+}))
+
+function renderAt(path) {
+  window.history.pushState({}, '', path)
+  render(<App />)
+}
 
 describe('App', () => {
   afterEach(() => {
     vi.clearAllMocks()
   })
 
-  it('displays the health status returned by the API after a successful fetch', async () => {
-    fetchHealthCheck.mockResolvedValue({ status: 'ok' })
+  it('sends signed-out visitors of the root path to the login page', async () => {
+    fetchCurrentSession.mockRejectedValue(new Error('Not authenticated'))
 
-    render(<App />)
+    renderAt('/')
 
-    await waitFor(() => expect(screen.getByText(/api health check: ok/i)).toBeInTheDocument())
+    expect(await screen.findByLabelText('Email address')).toBeInTheDocument()
   })
 
-  it('displays an unreachable status when the health-check fetch fails', async () => {
-    fetchHealthCheck.mockRejectedValue(new Error('network error'))
+  it('sends signed-in visitors of the root path to the employee list', async () => {
+    fetchCurrentSession.mockResolvedValue({ user: { email_address: 'hr.manager@acme.test' } })
 
-    render(<App />)
+    renderAt('/')
 
-    await waitFor(() =>
-      expect(screen.getByText(/api health check: unreachable/i)).toBeInTheDocument(),
-    )
+    expect(await screen.findByRole('link', { name: 'Employees' })).toBeInTheDocument()
+    expect(window.location.pathname).toBe('/dashboard')
+  })
+
+  it('sends unknown paths to the employee list', async () => {
+    fetchCurrentSession.mockResolvedValue({ user: { email_address: 'hr.manager@acme.test' } })
+
+    renderAt('/no-such-page')
+
+    expect(await screen.findByRole('link', { name: 'Employees' })).toBeInTheDocument()
+    expect(window.location.pathname).toBe('/dashboard')
   })
 })

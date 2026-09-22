@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { DashboardPage } from './DashboardPage'
 import { GuestRoute } from './features/auth/GuestRoute'
@@ -7,13 +7,12 @@ import { PasswordResetConfirmPage } from './features/auth/PasswordResetConfirmPa
 import { PasswordResetRequestPage } from './features/auth/PasswordResetRequestPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { InsightsPage } from './features/insights/InsightsPage'
-import { HealthCheckPage } from './HealthCheckPage'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HealthCheckPage />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route
           path="/login"
           element={
@@ -56,6 +55,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   )
