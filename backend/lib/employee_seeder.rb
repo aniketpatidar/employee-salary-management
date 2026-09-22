@@ -76,7 +76,7 @@ class EmployeeSeeder
         country: Employee.countries.fetch(country),
         currency: Employee.currencies.fetch(currency),
         base_salary: random_base_salary(currency),
-        employment_type: Employee.employment_types.fetch(@random.rand < @contractor_rate ? "contractor" : employment_types.sample(random: @random)),
+        employment_type: Employee.employment_types.fetch(@random.rand < @contractor_rate ? "contractor" : "full_time"),
         pay_frequency: Employee.pay_frequencies.fetch(pay_frequencies.sample(random: @random)),
         manager_id: nil,
         hire_date: random_hire_date,
@@ -111,8 +111,7 @@ class EmployeeSeeder
     end
 
     def random_hire_date
-      span = 10.years.ago.to_date..Date.current
-      span.to_a.sample(random: @random)
+      Date.current - @random.rand(0..3652)
     end
 
     def random_base_salary(currency)
@@ -130,10 +129,6 @@ class EmployeeSeeder
 
     def countries
       @countries ||= Employee.countries.keys
-    end
-
-    def employment_types
-      @employment_types ||= Employee.employment_types.keys
     end
 
     def pay_frequencies

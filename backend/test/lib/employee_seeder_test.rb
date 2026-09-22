@@ -47,6 +47,13 @@ class EmployeeSeederTest < ActiveSupport::TestCase
     end
   end
 
+  test "contractor share stays close to the configured contractor_rate" do
+    records = build_seeder(total: 500, random: Random.new(2024)).build_records
+    contractor_count = records.count { |record| record[:employment_type] == Employee.employment_types.fetch("contractor") }
+
+    assert_in_delta 0.2, contractor_count / 500.0, 0.05
+  end
+
   test "produces a mix of active and inactive employees" do
     records = build_seeder(total: 200).build_records
     statuses = records.map { |record| record[:status] }.uniq
