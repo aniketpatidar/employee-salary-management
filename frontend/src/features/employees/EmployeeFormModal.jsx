@@ -64,7 +64,7 @@ export function EmployeeFormModal({ mode, employeeId, filterOptions, onOpenChang
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{MODAL_TITLES[mode]}</DialogTitle>
         </DialogHeader>

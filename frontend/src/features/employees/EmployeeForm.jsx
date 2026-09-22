@@ -78,14 +78,16 @@ export function EmployeeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-      <TextField
-        id="full_name"
-        label="Full Name"
-        value={values.full_name}
-        onChange={(value) => updateField('full_name', value)}
-        error={errors.full_name}
-      />
+    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
+      <div className="sm:col-span-2">
+        <TextField
+          id="full_name"
+          label="Full Name"
+          value={values.full_name}
+          onChange={(value) => updateField('full_name', value)}
+          error={errors.full_name}
+        />
+      </div>
 
       <EnumField
         label="Department"
@@ -150,17 +152,19 @@ export function EmployeeForm({
         error={errors.hire_date}
       />
 
-      <Field label="Manager" error={errors.manager_id}>
-        <ManagerCombobox
-          value={values.manager_id}
-          label={managerLabel}
-          excludeId={excludeManagerId}
-          onSelect={handleManagerSelect}
-          onClear={handleManagerClear}
-        />
-      </Field>
+      <div className="sm:col-span-2">
+        <Field label="Manager" error={errors.manager_id}>
+          <ManagerCombobox
+            value={values.manager_id}
+            label={managerLabel}
+            excludeId={excludeManagerId}
+            onSelect={handleManagerSelect}
+            onClear={handleManagerClear}
+          />
+        </Field>
+      </div>
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex justify-end gap-2 pt-2 sm:col-span-2">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
