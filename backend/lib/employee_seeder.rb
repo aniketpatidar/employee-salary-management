@@ -49,10 +49,7 @@ class EmployeeSeeder
   def call
     records = build_records
 
-    ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
-    Employee.delete_all
-    ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name = 'employees'")
-    ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
+    reset_employees_table
 
     records.each_slice(1_000) do |batch|
       Employee.insert_all(batch)
@@ -62,6 +59,13 @@ class EmployeeSeeder
   end
 
   private
+    def reset_employees_table
+      ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
+      Employee.delete_all
+      ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name = 'employees'")
+      ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
+    end
+
     def build_record(id)
       department = departments.sample(random: @random)
       role = roles.sample(random: @random)
@@ -76,11 +80,11 @@ class EmployeeSeeder
         country: Employee.countries.fetch(country),
         currency: Employee.currencies.fetch(currency),
         base_salary: random_base_salary(currency),
-        employment_type: Employee.employment_types.fetch(@random.rand < @contractor_rate ? "contractor" : "full_time"),
+        employment_type: Employee.employment_types.fetch(random_employment_type),
         pay_frequency: Employee.pay_frequencies.fetch(pay_frequencies.sample(random: @random)),
         manager_id: nil,
         hire_date: random_hire_date,
-        status: Employee.statuses.fetch(@random.rand < @inactive_rate ? "inactive" : "active"),
+        status: Employee.statuses.fetch(random_status),
         department_name: department,
         role_name: role,
         created_at: Time.current,
@@ -88,22 +92,41 @@ class EmployeeSeeder
       }
     end
 
+    def random_employment_type
+      @random.rand < @contractor_rate ? "contractor" : "full_time"
+    end
+
+    def random_status
+      @random.rand < @inactive_rate ? "inactive" : "active"
+    end
+
     def assign_managers(records)
-      manager_pool_by_department = Hash.new { |hash, key| hash[key] = [] }
+      pools = manager_pools_by_department(records)
+      records.each { |record| assign_manager(record, pools) }
+      strip_helper_keys(records)
+    end
+
+    def manager_pools_by_department(records)
+      pools = Hash.new { |hash, key| hash[key] = [] }
+
       records.each do |record|
         next unless MANAGER_ROLES.include?(record[:role_name])
         next unless Employee.statuses.key(record[:status]) == "active"
 
-        manager_pool_by_department[record[:department_name]] << record[:id]
+        pools[record[:department_name]] << record[:id]
       end
 
-      records.each do |record|
-        next if @random.rand < @no_manager_rate
+      pools
+    end
 
-        candidates = manager_pool_by_department[record[:department_name]].select { |manager_id| manager_id < record[:id] }
-        record[:manager_id] = candidates.sample(random: @random) if candidates.any?
-      end
+    def assign_manager(record, pools)
+      return if @random.rand < @no_manager_rate
 
+      candidates = pools[record[:department_name]].select { |manager_id| manager_id < record[:id] }
+      record[:manager_id] = candidates.sample(random: @random) if candidates.any?
+    end
+
+    def strip_helper_keys(records)
       records.each do |record|
         record.delete(:department_name)
         record.delete(:role_name)
