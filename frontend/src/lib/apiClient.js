@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const SESSION_PATH = '/session'
 
 export class ApiError extends Error {
   constructor(message, { status, data } = {}) {
@@ -17,6 +18,10 @@ export function buildQueryString(params) {
   return query.toString()
 }
 
+function isSessionCheckOrLogin(path, method) {
+  return path === SESSION_PATH && (method === 'GET' || method === 'POST')
+}
+
 export async function apiRequest(path, { method = 'GET', body } = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
@@ -26,6 +31,10 @@ export async function apiRequest(path, { method = 'GET', body } = {}) {
   })
 
   const data = await response.json().catch(() => null)
+
+  if (response.status === 401 && !isSessionCheckOrLogin(path, method)) {
+    window.location.assign('/login')
+  }
 
   if (!response.ok) {
     throw new ApiError(data?.error ?? `Request failed with status ${response.status}`, {
