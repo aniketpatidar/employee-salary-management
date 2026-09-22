@@ -1,12 +1,4 @@
-import { apiRequest } from '../../lib/apiClient'
-
-function buildQueryString(params) {
-  const query = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) query.set(key, value)
-  })
-  return query.toString()
-}
+import { apiRequest, buildQueryString } from '../../lib/apiClient'
 
 export function fetchEmployees(params = {}) {
   const query = buildQueryString(params)

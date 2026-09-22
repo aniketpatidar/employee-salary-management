@@ -1,21 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { deactivateEmployee, fetchEmployeeFilterOptions, fetchEmployees } from './api'
 import { EmployeeFilters } from './EmployeeFilters'
 import { EmployeeFormModal } from './EmployeeFormModal'
 import { EmployeeTable } from './EmployeeTable'
 import { Pagination } from './Pagination'
-
-const FILTER_KEYS = ['department', 'country', 'role', 'employment_type', 'status']
-
-function readFilters(searchParams) {
-  return FILTER_KEYS.reduce((filters, key) => {
-    const value = searchParams.get(key)
-    if (value) filters[key] = value
-    return filters
-  }, {})
-}
+import { readFiltersFromParams, useUrlFilters } from './useUrlFilters'
 
 function readPage(searchParams) {
   const page = Number(searchParams.get('page'))
@@ -23,15 +13,15 @@ function readPage(searchParams) {
 }
 
 export function EmployeeListPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filters = readFilters(searchParams)
-  const page = readPage(searchParams)
+  const { searchParams, setSearchParams, filters, handleFilterChange } = useUrlFilters({
+    resetKeysOnChange: ['page'],
+  })
 
   const [filterOptions, setFilterOptions] = useState(null)
   const [filterOptionsError, setFilterOptionsError] = useState('')
   const [employeeData, setEmployeeData] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [loadedRequestKey, setLoadedRequestKey] = useState(null)
   const [refreshToken, setRefreshToken] = useState(0)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingEmployeeId, setEditingEmployeeId] = useState(null)
@@ -50,38 +40,31 @@ export function EmployeeListPage() {
   }, [])
 
   const queryKey = searchParams.toString()
+  const requestKey = `${queryKey}::${refreshToken}`
+  const isLoading = loadedRequestKey !== requestKey
 
   useEffect(() => {
     let isMounted = true
-    setIsLoading(true)
-    setLoadError('')
+    const query = new URLSearchParams(queryKey)
 
-    fetchEmployees({ ...filters, page })
+    fetchEmployees({ ...readFiltersFromParams(query), page: readPage(query) })
       .then((data) => {
-        if (isMounted) setEmployeeData(data)
+        if (!isMounted) return
+        setEmployeeData(data)
+        setLoadError('')
       })
       .catch(() => {
-        if (isMounted) setLoadError('Unable to load employees right now.')
+        if (!isMounted) return
+        setLoadError('Unable to load employees right now.')
       })
       .finally(() => {
-        if (isMounted) setIsLoading(false)
+        if (isMounted) setLoadedRequestKey(requestKey)
       })
 
     return () => {
       isMounted = false
     }
-  }, [queryKey, refreshToken])
-
-  function handleFilterChange(key, value) {
-    const next = new URLSearchParams(searchParams)
-    if (value) {
-      next.set(key, value)
-    } else {
-      next.delete(key)
-    }
-    next.delete('page')
-    setSearchParams(next)
-  }
+  }, [queryKey, requestKey])
 
   function handlePageChange(nextPage) {
     const next = new URLSearchParams(searchParams)

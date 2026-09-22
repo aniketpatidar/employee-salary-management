@@ -1,36 +1,26 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { EmployeeFilters } from '../employees/EmployeeFilters'
 import { fetchEmployeeFilterOptions } from '../employees/api'
+import { readFiltersFromParams, useUrlFilters } from '../employees/useUrlFilters'
 import { fetchPayInsights } from './api'
 import { BreakdownSelect } from './BreakdownSelect'
 import { InsightsTable } from './InsightsTable'
 
-const FILTER_KEYS = ['department', 'country', 'role', 'employment_type', 'status']
 const DEFAULT_BREAKDOWN = 'department'
-
-function readFilters(searchParams) {
-  return FILTER_KEYS.reduce((filters, key) => {
-    const value = searchParams.get(key)
-    if (value) filters[key] = value
-    return filters
-  }, {})
-}
 
 function readBreakdown(searchParams) {
   return searchParams.get('breakdown') || DEFAULT_BREAKDOWN
 }
 
 export function InsightsPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filters = readFilters(searchParams)
+  const { searchParams, setSearchParams, filters, handleFilterChange } = useUrlFilters()
   const breakdown = readBreakdown(searchParams)
 
   const [filterOptions, setFilterOptions] = useState(null)
   const [filterOptionsError, setFilterOptionsError] = useState('')
   const [groups, setGroups] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [loadedRequestKey, setLoadedRequestKey] = useState(null)
 
   useEffect(() => {
     fetchEmployeeFilterOptions()
@@ -45,37 +35,30 @@ export function InsightsPage() {
   }, [])
 
   const queryKey = searchParams.toString()
+  const isLoading = loadedRequestKey !== queryKey
 
   useEffect(() => {
     let isMounted = true
-    setIsLoading(true)
-    setLoadError('')
+    const query = new URLSearchParams(queryKey)
 
-    fetchPayInsights({ ...filters, breakdown })
+    fetchPayInsights({ ...readFiltersFromParams(query), breakdown: readBreakdown(query) })
       .then((data) => {
-        if (isMounted) setGroups(data.groups ?? [])
+        if (!isMounted) return
+        setGroups(data.groups ?? [])
+        setLoadError('')
       })
       .catch(() => {
-        if (isMounted) setLoadError('Unable to load pay insights right now.')
+        if (!isMounted) return
+        setLoadError('Unable to load pay insights right now.')
       })
       .finally(() => {
-        if (isMounted) setIsLoading(false)
+        if (isMounted) setLoadedRequestKey(queryKey)
       })
 
     return () => {
       isMounted = false
     }
   }, [queryKey])
-
-  function handleFilterChange(key, value) {
-    const next = new URLSearchParams(searchParams)
-    if (value) {
-      next.set(key, value)
-    } else {
-      next.delete(key)
-    }
-    setSearchParams(next)
-  }
 
   function handleBreakdownChange(value) {
     const next = new URLSearchParams(searchParams)

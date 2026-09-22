@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { EmployeeForm, validateEmployeeForm } from './EmployeeForm'
+import { EmployeeForm } from './EmployeeForm'
+import { validateEmployeeForm } from './employeeFormValidation'
 
 vi.mock('./api', () => ({
   fetchManagerOptions: vi.fn().mockResolvedValue([]),

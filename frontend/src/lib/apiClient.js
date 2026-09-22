@@ -9,6 +9,14 @@ export class ApiError extends Error {
   }
 }
 
+export function buildQueryString(params) {
+  const query = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) query.set(key, value)
+  })
+  return query.toString()
+}
+
 export async function apiRequest(path, { method = 'GET', body } = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
