@@ -35,6 +35,18 @@ class EmployeeSeederTest < ActiveSupport::TestCase
     end
   end
 
+  test "generates each base salary within its currency's predefined range" do
+    records = build_seeder(total: 200, random: Random.new(99)).build_records
+
+    records.each do |record|
+      currency_key = Employee.currencies.key(record[:currency])
+      range = EmployeeSeeder::CURRENCY_SALARY_RANGES.fetch(currency_key)
+
+      assert_includes range, record[:base_salary].floor,
+        "expected #{record[:base_salary]} to fall within #{currency_key}'s range #{range}"
+    end
+  end
+
   test "produces a mix of active and inactive employees" do
     records = build_seeder(total: 200).build_records
     statuses = records.map { |record| record[:status] }.uniq

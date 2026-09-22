@@ -15,6 +15,18 @@ class EmployeeSeeder
 
   MANAGER_ROLES = %w[engineering_manager sales_manager operations_manager executive product_manager].freeze
 
+  CURRENCY_SALARY_RANGES = {
+    "usd" => 50_000..200_000,
+    "cad" => 55_000..180_000,
+    "gbp" => 35_000..140_000,
+    "eur" => 40_000..150_000,
+    "aud" => 70_000..200_000,
+    "sgd" => 50_000..220_000,
+    "brl" => 60_000..400_000,
+    "inr" => 400_000..5_000_000,
+    "jpy" => 4_000_000..20_000_000
+  }.freeze
+
   DEFAULT_INACTIVE_RATE = 0.1
   DEFAULT_CONTRACTOR_RATE = 0.2
   DEFAULT_NO_MANAGER_RATE = 0.15
@@ -63,7 +75,7 @@ class EmployeeSeeder
         role: Employee.roles.fetch(role),
         country: Employee.countries.fetch(country),
         currency: Employee.currencies.fetch(currency),
-        base_salary: random_base_salary,
+        base_salary: random_base_salary(currency),
         employment_type: Employee.employment_types.fetch(@random.rand < @contractor_rate ? "contractor" : employment_types.sample(random: @random)),
         pay_frequency: Employee.pay_frequencies.fetch(pay_frequencies.sample(random: @random)),
         manager_id: nil,
@@ -103,8 +115,9 @@ class EmployeeSeeder
       span.to_a.sample(random: @random)
     end
 
-    def random_base_salary
-      @random.rand(40_000..180_000) + @random.rand(0..99) / 100.0
+    def random_base_salary(currency)
+      range = CURRENCY_SALARY_RANGES.fetch(currency)
+      @random.rand(range) + @random.rand(0..99) / 100.0
     end
 
     def departments
