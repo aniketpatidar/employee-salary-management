@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { fetchEmployeeFilterOptions, fetchEmployees } from './api'
+import { Button } from '@/components/ui/button'
+import { deactivateEmployee, fetchEmployeeFilterOptions, fetchEmployees } from './api'
 import { EmployeeFilters } from './EmployeeFilters'
+import { EmployeeFormModal } from './EmployeeFormModal'
 import { EmployeeTable } from './EmployeeTable'
 import { Pagination } from './Pagination'
 
@@ -30,6 +32,10 @@ export function EmployeeListPage() {
   const [employeeData, setEmployeeData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [refreshToken, setRefreshToken] = useState(0)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingEmployeeId, setEditingEmployeeId] = useState(null)
+  const [deactivateError, setDeactivateError] = useState('')
 
   useEffect(() => {
     fetchEmployeeFilterOptions()
@@ -64,7 +70,7 @@ export function EmployeeListPage() {
     return () => {
       isMounted = false
     }
-  }, [queryKey])
+  }, [queryKey, refreshToken])
 
   function handleFilterChange(key, value) {
     const next = new URLSearchParams(searchParams)
@@ -87,18 +93,65 @@ export function EmployeeListPage() {
     setSearchParams(next)
   }
 
+  function handleSaved() {
+    setIsAddModalOpen(false)
+    setEditingEmployeeId(null)
+    setRefreshToken((token) => token + 1)
+  }
+
+  async function handleDeactivate(employee) {
+    const confirmed = window.confirm(`Deactivate ${employee.full_name}?`)
+    if (!confirmed) return
+
+    setDeactivateError('')
+    try {
+      await deactivateEmployee(employee.id)
+      setRefreshToken((token) => token + 1)
+    } catch {
+      setDeactivateError('Unable to deactivate employee right now.')
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <EmployeeFilters filters={filters} options={filterOptions} onChange={handleFilterChange} />
+      <div className="flex items-start justify-between gap-4">
+        <EmployeeFilters filters={filters} options={filterOptions} onChange={handleFilterChange} />
+        <Button type="button" onClick={() => setIsAddModalOpen(true)}>
+          Add Employee
+        </Button>
+      </div>
       {filterOptionsError && <p className="text-sm text-destructive">{filterOptionsError}</p>}
       {loadError && <p className="text-sm text-destructive">{loadError}</p>}
-      <EmployeeTable employees={employeeData?.employees ?? []} isLoading={isLoading} />
+      {deactivateError && <p className="text-sm text-destructive">{deactivateError}</p>}
+      <EmployeeTable
+        employees={employeeData?.employees ?? []}
+        isLoading={isLoading}
+        onEdit={setEditingEmployeeId}
+        onDeactivate={handleDeactivate}
+      />
       {employeeData && !loadError && (
         <Pagination
           page={employeeData.page}
           perPage={employeeData.per_page}
           totalCount={employeeData.total_count}
           onPageChange={handlePageChange}
+        />
+      )}
+      {isAddModalOpen && (
+        <EmployeeFormModal
+          mode="add"
+          filterOptions={filterOptions}
+          onOpenChange={(open) => !open && setIsAddModalOpen(false)}
+          onSaved={handleSaved}
+        />
+      )}
+      {editingEmployeeId && (
+        <EmployeeFormModal
+          mode="edit"
+          employeeId={editingEmployeeId}
+          filterOptions={filterOptions}
+          onOpenChange={(open) => !open && setEditingEmployeeId(null)}
+          onSaved={handleSaved}
         />
       )}
     </div>

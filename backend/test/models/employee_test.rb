@@ -110,6 +110,57 @@ class EmployeeTest < ActiveSupport::TestCase
     assert_equal manager, report.manager
   end
 
+  test "rejects an inactive employee as manager" do
+    manager = Employee.create!(valid_attributes(role: "engineering_manager", status: "inactive"))
+    report = Employee.new(valid_attributes(manager_id: manager.id))
+
+    assert_not report.valid?
+    assert_includes report.errors[:manager_id], "must be an active employee"
+  end
+
+  test "rejects a nonexistent manager id" do
+    employee = Employee.new(valid_attributes(manager_id: -1))
+
+    assert_not employee.valid?
+    assert_includes employee.errors[:manager_id], "must be an active employee"
+  end
+
+  test "rejects an employee as their own manager" do
+    employee = Employee.create!(valid_attributes)
+    employee.manager_id = employee.id
+
+    assert_not employee.valid?
+    assert_includes employee.errors[:manager_id], "can't be the employee's own manager"
+  end
+
+  test "name_matches scope finds employees whose name contains the query, case-insensitively" do
+    matching = Employee.create!(valid_attributes(full_name: "Priya Sharma"))
+    Employee.create!(valid_attributes(full_name: "John Smith"))
+
+    results = Employee.name_matches("priya")
+
+    assert_equal [ matching.id ], results.map(&:id)
+  end
+
+  test "name_matches scope treats % and _ in the query as literal characters" do
+    Employee.create!(valid_attributes(full_name: "Priya Sharma"))
+    literal_match = Employee.create!(valid_attributes(full_name: "100%_Match"))
+
+    results = Employee.name_matches("100%_Match")
+
+    assert_equal [ literal_match.id ], results.map(&:id)
+  end
+
+  test "excluding_id scope omits the given id from results" do
+    keep = Employee.create!(valid_attributes(full_name: "Keep Me"))
+    exclude = Employee.create!(valid_attributes(full_name: "Exclude Me"))
+
+    results = Employee.excluding_id(exclude.id)
+
+    assert_includes results.map(&:id), keep.id
+    assert_not_includes results.map(&:id), exclude.id
+  end
+
   COUNTRY_CURRENCY_MAP_CASES = {
     "united_states" => "usd",
     "canada" => "cad",

@@ -78,11 +78,14 @@ class Employee < ApplicationRecord
   scope :by_role, ->(value) { where(role: value) if value.present? }
   scope :by_employment_type, ->(value) { where(employment_type: value) if value.present? }
   scope :by_status, ->(value) { where(status: value) if value.present? }
+  scope :name_matches, ->(query) { where("full_name LIKE ? ESCAPE '\\'", "%#{sanitize_sql_like(query)}%") if query.present? }
+  scope :excluding_id, ->(id) { where.not(id: id) if id.present? }
 
   validates :full_name, presence: true
   validates :base_salary, presence: true, numericality: { greater_than: 0 }
   validates :hire_date, presence: true
   validate :hire_date_not_in_future
+  validate :manager_must_be_active_and_not_self, if: -> { manager_id.present? && will_save_change_to_manager_id? }
 
   before_validation :derive_currency_from_country
 
@@ -95,5 +98,13 @@ class Employee < ApplicationRecord
       return if hire_date.blank?
 
       errors.add(:hire_date, "can't be in the future") if hire_date > Date.current
+    end
+
+    def manager_must_be_active_and_not_self
+      if manager_id == id
+        errors.add(:manager_id, "can't be the employee's own manager")
+      elsif !Employee.active.exists?(id: manager_id)
+        errors.add(:manager_id, "must be an active employee")
+      end
     end
 end

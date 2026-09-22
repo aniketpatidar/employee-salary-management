@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EmployeeListPage } from './EmployeeListPage'
-import { fetchEmployeeFilterOptions, fetchEmployees } from './api'
+import { deactivateEmployee, fetchEmployeeFilterOptions, fetchEmployees } from './api'
 
 async function openDropdown(user, label) {
   await user.click(screen.getByRole('combobox', { name: label }))
@@ -17,6 +17,17 @@ async function selectOption(user, label, optionText) {
 vi.mock('./api', () => ({
   fetchEmployees: vi.fn(),
   fetchEmployeeFilterOptions: vi.fn(),
+  deactivateEmployee: vi.fn(),
+}))
+
+vi.mock('./EmployeeFormModal', () => ({
+  EmployeeFormModal: ({ mode, onSaved }) => (
+    <div data-testid={`employee-form-modal-${mode}`}>
+      <button type="button" onClick={onSaved}>
+        Fake Save
+      </button>
+    </div>
+  ),
 }))
 
 const filterOptions = {
@@ -43,6 +54,23 @@ function employeesPage(overrides = {}) {
     total_count: 0,
     ...overrides,
   }
+}
+
+function activeEmployeePage() {
+  return employeesPage({
+    employees: [
+      {
+        id: 3,
+        full_name: 'Active Person',
+        department: 'engineering',
+        role: 'software_engineer',
+        country: 'united_states',
+        employment_type: 'full_time',
+        status: 'active',
+      },
+    ],
+    total_count: 1,
+  })
 }
 
 describe('EmployeeListPage', () => {
@@ -265,5 +293,94 @@ describe('EmployeeListPage', () => {
       expect(screen.getByText('Unable to load filter options.')).toBeInTheDocument(),
     )
     expect(screen.getByText('Amir Khan')).toBeInTheDocument()
+  })
+
+  it('opens the Add Employee modal from the Add Employee button', async () => {
+    fetchEmployeeFilterOptions.mockResolvedValue(filterOptions)
+    fetchEmployees.mockResolvedValue(employeesPage())
+    const user = userEvent.setup()
+
+    renderPage()
+    await waitFor(() => expect(fetchEmployees).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'Add Employee' }))
+
+    expect(screen.getByTestId('employee-form-modal-add')).toBeInTheDocument()
+  })
+
+  it('closes the Add Employee modal, refetches, and shows the newly added employee', async () => {
+    fetchEmployeeFilterOptions.mockResolvedValue(filterOptions)
+    fetchEmployees
+      .mockResolvedValueOnce(employeesPage())
+      .mockResolvedValueOnce(
+        employeesPage({
+          employees: [
+            {
+              id: 99,
+              full_name: 'New Hire',
+              department: 'engineering',
+              role: 'software_engineer',
+              country: 'united_states',
+              employment_type: 'full_time',
+              status: 'active',
+            },
+          ],
+          total_count: 1,
+        }),
+      )
+    const user = userEvent.setup()
+
+    renderPage()
+    await waitFor(() => expect(fetchEmployees).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'Add Employee' }))
+    await user.click(screen.getByRole('button', { name: 'Fake Save' }))
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('employee-form-modal-add')).not.toBeInTheDocument(),
+    )
+    await waitFor(() => expect(fetchEmployees).toHaveBeenCalledTimes(2))
+    expect(screen.getByText('New Hire')).toBeInTheDocument()
+  })
+
+  it('deactivates an employee and refetches the list after confirmation', async () => {
+    fetchEmployeeFilterOptions.mockResolvedValue(filterOptions)
+    fetchEmployees.mockResolvedValue(activeEmployeePage())
+    deactivateEmployee.mockResolvedValue({ employee: { id: 3, status: 'inactive' } })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const user = userEvent.setup()
+
+    renderPage()
+    await waitFor(() => expect(fetchEmployees).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'Deactivate' }))
+
+    await waitFor(() => expect(deactivateEmployee).toHaveBeenCalledWith(3))
+    await waitFor(() => expect(fetchEmployees).toHaveBeenCalledTimes(2))
+  })
+
+  it('does not deactivate when the confirmation is cancelled', async () => {
+    fetchEmployeeFilterOptions.mockResolvedValue(filterOptions)
+    fetchEmployees.mockResolvedValue(activeEmployeePage())
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const user = userEvent.setup()
+
+    renderPage()
+    await waitFor(() => expect(fetchEmployees).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'Deactivate' }))
+
+    expect(deactivateEmployee).not.toHaveBeenCalled()
+    expect(fetchEmployees).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows an error message when deactivating an employee fails', async () => {
+    fetchEmployeeFilterOptions.mockResolvedValue(filterOptions)
+    fetchEmployees.mockResolvedValue(activeEmployeePage())
+    deactivateEmployee.mockRejectedValue(new Error('network error'))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const user = userEvent.setup()
+
+    renderPage()
+    await waitFor(() => expect(fetchEmployees).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'Deactivate' }))
+
+    expect(await screen.findByText('Unable to deactivate employee right now.')).toBeInTheDocument()
   })
 })

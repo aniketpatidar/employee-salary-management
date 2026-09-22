@@ -1,8 +1,15 @@
 class EmployeesController < ApplicationController
   FILTER_FIELDS = %i[department country role employment_type status].freeze
+  EMPLOYEE_PARAMS = %i[
+    full_name department role country base_salary
+    employment_type pay_frequency hire_date manager_id
+  ].freeze
   DEFAULT_STATUS = "active"
   DEFAULT_PER_PAGE = 25
   MAX_PER_PAGE = 100
+  MANAGER_OPTIONS_LIMIT = 10
+
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
   def index
     invalid_field = first_invalid_filter
@@ -21,6 +28,51 @@ class EmployeesController < ApplicationController
 
   def filters
     render json: FILTER_FIELDS.index_with { |field| allowed_values(field) }
+      .merge(country_currency: Employee::COUNTRY_CURRENCY_MAP)
+  end
+
+  def show
+    render json: { employee: employee_detail_json(Employee.find(params[:id])) }
+  end
+
+  def create
+    employee = Employee.new(employee_params)
+
+    if employee.save
+      render json: { employee: employee_detail_json(employee) }, status: :created
+    else
+      render_errors(employee)
+    end
+  end
+
+  def update
+    employee = Employee.find(params[:id])
+
+    if employee.update(employee_params)
+      render json: { employee: employee_detail_json(employee) }
+    else
+      render_errors(employee)
+    end
+  end
+
+  def deactivate
+    employee = Employee.find(params[:id])
+
+    if employee.update(status: :inactive)
+      render json: { employee: employee_detail_json(employee) }
+    else
+      render_errors(employee)
+    end
+  end
+
+  def manager_options
+    employees = Employee.active
+      .name_matches(params[:q])
+      .excluding_id(params[:exclude_id])
+      .order(:full_name)
+      .limit(MANAGER_OPTIONS_LIMIT)
+
+    render json: employees.as_json(only: %i[id full_name department role])
   end
 
   private
@@ -68,5 +120,30 @@ class EmployeesController < ApplicationController
 
     def render_invalid_filter(field)
       render json: { error: "Invalid #{field} filter value" }, status: :unprocessable_entity
+    end
+
+    def employee_params
+      params.permit(EMPLOYEE_PARAMS)
+    end
+
+    def employee_detail_json(employee)
+      employee.as_json(
+        only: %i[
+          id full_name department role country currency base_salary
+          employment_type pay_frequency hire_date status manager_id
+        ]
+      ).merge(manager: manager_summary(employee.manager))
+    end
+
+    def manager_summary(manager)
+      manager&.as_json(only: %i[id full_name])
+    end
+
+    def render_errors(employee)
+      render json: { errors: employee.errors.messages }, status: :unprocessable_entity
+    end
+
+    def render_not_found
+      render json: { error: "Employee not found" }, status: :not_found
     end
 end

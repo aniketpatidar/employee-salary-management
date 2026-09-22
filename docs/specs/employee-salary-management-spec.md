@@ -135,23 +135,23 @@ GET /employees?department=&country=&role=&employment_type=&status=&page=&per_pag
 ```
 
 ## Slice 3: Employee CRUD (Add / Edit / Deactivate)
-- [ ] HR Manager can open an "Add Employee" modal from the Employee List page
-- [ ] Add form requires full name, department, role, country, base salary, employment type, pay frequency, and hire date
-- [ ] Department, role, and country are select/dropdown inputs populated from the predefined lists — not free-text inputs
-- [ ] ID (the database's auto-increment `id`) and currency are system-assigned/derived and not present as editable fields in the form — there is no separate "Employee ID" input, and currency is not a dropdown either (it's set automatically from the chosen country)
-- [ ] Shows an inline error when base salary is zero, negative, or not a valid number
-- [ ] Shows an inline error when hire date is in the future
-- [ ] Shows an inline error when a required field is left blank
-- [ ] Shows an inline error if a department, role, or country value outside the predefined list is submitted (defends against tampered requests bypassing the dropdown)
-- [ ] Manager field is optional; when set, only active employees are selectable (no inactive employees, no self-reference)
-- [ ] Newly added employee appears in the list (subject to currently active filters) after saving, with its assigned `id` visible
-- [ ] HR Manager can open an "Edit Employee" modal from the list to update any field, including salary, on an existing employee
-- [ ] Edit form applies the same validation rules as Add, including dropdown-constrained department/role/country
-- [ ] Changing country on edit re-derives currency automatically (currency is never left stale relative to country)
-- [ ] HR Manager can deactivate an employee from the list
-- [ ] Deactivated employee disappears from the default (active-only) list view immediately
-- [ ] Deactivated employee is still visible when explicitly filtering status=inactive
-- [ ] Deactivating an employee who is set as another employee's manager does not delete or clear that reporting reference
+- [x] HR Manager can open an "Add Employee" modal from the Employee List page
+- [x] Add form requires full name, department, role, country, base salary, employment type, pay frequency, and hire date
+- [x] Department, role, and country are select/dropdown inputs populated from the predefined lists — not free-text inputs
+- [x] ID (the database's auto-increment `id`) and currency are system-assigned/derived and not present as editable fields in the form — there is no separate "Employee ID" input, and currency is not a dropdown either (it's set automatically from the chosen country)
+- [x] Shows an inline error when base salary is zero, negative, or not a valid number
+- [x] Shows an inline error when hire date is in the future
+- [x] Shows an inline error when a required field is left blank
+- [x] Shows an inline error if a department, role, or country value outside the predefined list is submitted (defends against tampered requests bypassing the dropdown)
+- [x] Manager field is optional; when set, only active employees are selectable (no inactive employees, no self-reference)
+- [x] Newly added employee appears in the list (subject to currently active filters) after saving, with its assigned `id` visible
+- [x] HR Manager can open an "Edit Employee" modal from the list to update any field, including salary, on an existing employee
+- [x] Edit form applies the same validation rules as Add, including dropdown-constrained department/role/country
+- [x] Changing country on edit re-derives currency automatically (currency is never left stale relative to country)
+- [x] HR Manager can deactivate an employee from the list
+- [x] Deactivated employee disappears from the default (active-only) list view immediately
+- [x] Deactivated employee is still visible when explicitly filtering status=inactive
+- [x] Deactivating an employee who is set as another employee's manager does not delete or clear that reporting reference
 
 ### API Shape
 ```

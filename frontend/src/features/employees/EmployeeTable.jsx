@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -9,9 +10,9 @@ import {
 } from '@/components/ui/table'
 import { humanizeEnumValue } from '@/lib/format'
 
-const COLUMNS = ['Name', 'ID', 'Department', 'Role', 'Country', 'Employment Type', 'Status']
+const COLUMNS = ['Name', 'ID', 'Department', 'Role', 'Country', 'Employment Type', 'Status', 'Actions']
 
-export function EmployeeTable({ employees, isLoading }) {
+export function EmployeeTable({ employees, isLoading, onEdit, onDeactivate }) {
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Loading employees…</p>
   }
@@ -31,14 +32,16 @@ export function EmployeeTable({ employees, isLoading }) {
       </TableHeader>
       <TableBody>
         {employees.map((employee) => (
-          <EmployeeRow key={employee.id} employee={employee} />
+          <EmployeeRow key={employee.id} employee={employee} onEdit={onEdit} onDeactivate={onDeactivate} />
         ))}
       </TableBody>
     </Table>
   )
 }
 
-function EmployeeRow({ employee }) {
+function EmployeeRow({ employee, onEdit, onDeactivate }) {
+  const isActive = employee.status === 'active'
+
   return (
     <TableRow>
       <TableCell>{employee.full_name}</TableCell>
@@ -48,9 +51,21 @@ function EmployeeRow({ employee }) {
       <TableCell>{humanizeEnumValue(employee.country)}</TableCell>
       <TableCell>{humanizeEnumValue(employee.employment_type)}</TableCell>
       <TableCell>
-        <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>
+        <Badge variant={isActive ? 'default' : 'secondary'}>
           {humanizeEnumValue(employee.status)}
         </Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => onEdit(employee.id)}>
+            Edit
+          </Button>
+          {isActive && (
+            <Button type="button" variant="outline" size="sm" onClick={() => onDeactivate(employee)}>
+              Deactivate
+            </Button>
+          )}
+        </div>
       </TableCell>
     </TableRow>
   )

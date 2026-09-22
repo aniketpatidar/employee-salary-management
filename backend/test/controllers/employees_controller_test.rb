@@ -299,4 +299,462 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     assert_equal Employee.employment_types.keys, body["employment_type"]
     assert_equal Employee.statuses.keys, body["status"]
   end
+
+  test "GET /employees/filters includes the country_currency mapping" do
+    sign_in_as_hr_manager
+
+    get filters_employees_path
+
+    body = JSON.parse(response.body)
+    assert_equal Employee::COUNTRY_CURRENCY_MAP, body["country_currency"]
+  end
+
+  def valid_employee_params(overrides = {})
+    {
+      full_name: "New Hire",
+      department: "engineering",
+      role: "software_engineer",
+      country: "united_states",
+      base_salary: "80000",
+      employment_type: "full_time",
+      pay_frequency: "annual",
+      hire_date: "2022-01-15"
+    }.merge(overrides)
+  end
+
+  test "GET /employees/:id returns employee fields plus a manager summary" do
+    sign_in_as_hr_manager
+    manager = create_employee(full_name: "Manager Person")
+    employee = create_employee(manager_id: manager.id)
+
+    get employee_path(employee)
+
+    assert_response :success
+    body = JSON.parse(response.body)["employee"]
+    assert_equal employee.id, body["id"]
+    assert_equal "usd", body["currency"]
+    assert_equal({ "id" => manager.id, "full_name" => "Manager Person" }, body["manager"])
+  end
+
+  test "GET /employees/:id returns null manager when the employee has none" do
+    sign_in_as_hr_manager
+    employee = create_employee
+
+    get employee_path(employee)
+
+    body = JSON.parse(response.body)["employee"]
+    assert_nil body["manager"]
+  end
+
+  test "GET /employees/:id returns 404 for an unknown id" do
+    sign_in_as_hr_manager
+
+    get employee_path(999_999)
+
+    assert_response :not_found
+    body = JSON.parse(response.body)
+    assert_equal "Employee not found", body["error"]
+  end
+
+  test "GET /employees/:id is rejected with 401 when unauthenticated" do
+    employee = create_employee
+
+    get employee_path(employee)
+
+    assert_response :unauthorized
+  end
+
+  test "POST /employees creates the employee and returns 201 with id and derived currency" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(country: "germany")
+
+    assert_response :created
+    body = JSON.parse(response.body)["employee"]
+    assert body["id"].present?
+    assert_equal "eur", body["currency"]
+    assert_equal "active", body["status"]
+  end
+
+  %i[full_name department role country base_salary employment_type pay_frequency hire_date].each do |field|
+    test "create returns 422 with an error on #{field} when it is blank" do
+      sign_in_as_hr_manager
+
+      post employees_path, params: valid_employee_params(field => "")
+
+      assert_response :unprocessable_entity
+      body = JSON.parse(response.body)
+      assert body["errors"][field.to_s].present?, "expected an error on #{field}, got #{body["errors"]}"
+    end
+  end
+
+  test "create returns 422 when base_salary is zero" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(base_salary: "0")
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "must be greater than 0" ], body["errors"]["base_salary"]
+  end
+
+  test "create returns 422 when base_salary is negative" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(base_salary: "-500")
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "must be greater than 0" ], body["errors"]["base_salary"]
+  end
+
+  test "create returns 422, not 500, when base_salary is not a number" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(base_salary: "abc")
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "is not a number" ], body["errors"]["base_salary"]
+  end
+
+  test "create returns 422 when hire_date is in the future" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(hire_date: (Date.current + 1).to_s)
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "can't be in the future" ], body["errors"]["hire_date"]
+  end
+
+  test "create returns 422, not 500, for an out-of-list department" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(department: "not_a_real_department")
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert body["errors"]["department"].present?
+  end
+
+  test "create returns 422, not 500, for an out-of-list role" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(role: "wizard")
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert body["errors"]["role"].present?
+  end
+
+  test "create returns 422, not 500, for an out-of-list country" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(country: "narnia")
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert body["errors"]["country"].present?
+  end
+
+  test "create ignores a client-supplied id, status, and currency" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(id: 999_999, status: "inactive", currency: "eur")
+
+    assert_response :created
+    body = JSON.parse(response.body)["employee"]
+    assert_not_equal 999_999, body["id"]
+    assert_equal "active", body["status"]
+    assert_equal "usd", body["currency"]
+  end
+
+  test "create rejects an inactive employee as manager" do
+    sign_in_as_hr_manager
+    inactive_manager = create_employee(status: "inactive")
+
+    post employees_path, params: valid_employee_params(manager_id: inactive_manager.id)
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "must be an active employee" ], body["errors"]["manager_id"]
+  end
+
+  test "create rejects a nonexistent manager id" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params(manager_id: 999_999)
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "must be an active employee" ], body["errors"]["manager_id"]
+  end
+
+  test "create accepts a valid active manager" do
+    sign_in_as_hr_manager
+    manager = create_employee(status: "active")
+
+    post employees_path, params: valid_employee_params(manager_id: manager.id)
+
+    assert_response :created
+    body = JSON.parse(response.body)["employee"]
+    assert_equal manager.id, body["manager_id"]
+  end
+
+  test "create succeeds without a manager since manager is optional" do
+    sign_in_as_hr_manager
+
+    post employees_path, params: valid_employee_params
+
+    assert_response :created
+    body = JSON.parse(response.body)["employee"]
+    assert_nil body["manager_id"]
+  end
+
+  test "POST /employees is rejected with 401 when unauthenticated" do
+    post employees_path, params: valid_employee_params
+
+    assert_response :unauthorized
+  end
+
+  test "PATCH /employees/:id updates the salary" do
+    sign_in_as_hr_manager
+    employee = create_employee(base_salary: 50_000)
+
+    patch employee_path(employee), params: { base_salary: "70000" }
+
+    assert_response :success
+    assert_equal 70_000, employee.reload.base_salary
+  end
+
+  test "PATCH /employees/:id re-derives currency when country changes" do
+    sign_in_as_hr_manager
+    employee = create_employee(country: "united_states")
+
+    patch employee_path(employee), params: { country: "japan" }
+
+    body = JSON.parse(response.body)["employee"]
+    assert_equal "jpy", body["currency"]
+    assert_equal "jpy", employee.reload.currency
+  end
+
+  test "PATCH /employees/:id returns 422 when a required field is cleared" do
+    sign_in_as_hr_manager
+    employee = create_employee
+
+    patch employee_path(employee), params: { full_name: "" }
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "can't be blank" ], body["errors"]["full_name"]
+  end
+
+  test "PATCH /employees/:id returns 422 when base_salary becomes non-numeric" do
+    sign_in_as_hr_manager
+    employee = create_employee
+
+    patch employee_path(employee), params: { base_salary: "abc" }
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "is not a number" ], body["errors"]["base_salary"]
+  end
+
+  test "PATCH /employees/:id ignores a client-supplied id, status, and currency" do
+    sign_in_as_hr_manager
+    employee = create_employee(country: "united_states")
+
+    patch employee_path(employee), params: { id: 999_999, status: "inactive", currency: "eur" }
+
+    assert_response :success
+    body = JSON.parse(response.body)["employee"]
+    assert_equal employee.id, body["id"]
+    assert_equal "active", body["status"]
+    assert_equal "usd", body["currency"]
+  end
+
+  test "PATCH /employees/:id returns 404 for an unknown id" do
+    sign_in_as_hr_manager
+
+    patch employee_path(999_999), params: { base_salary: "70000" }
+
+    assert_response :not_found
+  end
+
+  test "PATCH /employees/:id is rejected with 401 when unauthenticated" do
+    employee = create_employee
+
+    patch employee_path(employee), params: { base_salary: "70000" }
+
+    assert_response :unauthorized
+  end
+
+  test "PATCH /employees/:id/deactivate sets status to inactive" do
+    sign_in_as_hr_manager
+    employee = create_employee(status: "active")
+
+    patch deactivate_employee_path(employee)
+
+    assert_response :success
+    body = JSON.parse(response.body)["employee"]
+    assert_equal "inactive", body["status"]
+    assert_equal "inactive", employee.reload.status
+  end
+
+  test "deactivated employee disappears from the default active-only list" do
+    sign_in_as_hr_manager
+    employee = create_employee(status: "active")
+
+    patch deactivate_employee_path(employee)
+    get employees_path
+
+    body = JSON.parse(response.body)
+    assert_not_includes body["employees"].map { |e| e["id"] }, employee.id
+  end
+
+  test "deactivated employee still appears when filtering status=inactive" do
+    sign_in_as_hr_manager
+    employee = create_employee(status: "active")
+
+    patch deactivate_employee_path(employee)
+    get employees_path, params: { status: "inactive" }
+
+    body = JSON.parse(response.body)
+    assert_includes body["employees"].map { |e| e["id"] }, employee.id
+  end
+
+  test "deactivating a manager leaves the manager_id on their reports intact" do
+    sign_in_as_hr_manager
+    manager = create_employee(status: "active")
+    report = create_employee(manager_id: manager.id)
+
+    patch deactivate_employee_path(manager)
+
+    assert_equal manager.id, report.reload.manager_id
+  end
+
+  test "PATCH /employees/:id/deactivate returns 404 for an unknown id" do
+    sign_in_as_hr_manager
+
+    patch deactivate_employee_path(999_999)
+
+    assert_response :not_found
+  end
+
+  test "PATCH /employees/:id/deactivate is rejected with 401 when unauthenticated" do
+    employee = create_employee
+
+    patch deactivate_employee_path(employee)
+
+    assert_response :unauthorized
+  end
+
+  test "PATCH /employees/:id updates the salary of a report whose manager was deactivated" do
+    sign_in_as_hr_manager
+    manager = create_employee(status: "active")
+    report = create_employee(manager_id: manager.id)
+    patch deactivate_employee_path(manager)
+
+    patch employee_path(report), params: { base_salary: "88000" }
+
+    assert_response :success
+    assert_equal 88_000, report.reload.base_salary
+  end
+
+  test "PATCH /employees/:id/deactivate succeeds for a report whose manager was deactivated" do
+    sign_in_as_hr_manager
+    manager = create_employee(status: "active")
+    report = create_employee(manager_id: manager.id)
+    patch deactivate_employee_path(manager)
+
+    patch deactivate_employee_path(report)
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "inactive", body["employee"]["status"]
+  end
+
+  test "PATCH /employees/:id returns 422 when changing manager_id to an inactive employee" do
+    sign_in_as_hr_manager
+    employee = create_employee
+    inactive_manager = create_employee(status: "inactive")
+
+    patch employee_path(employee), params: { manager_id: inactive_manager.id }
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal [ "must be an active employee" ], body["errors"]["manager_id"]
+  end
+
+  test "manager_options matches by name case-insensitively" do
+    sign_in_as_hr_manager
+    match = create_employee(full_name: "Priya Sharma")
+    create_employee(full_name: "John Smith")
+
+    get manager_options_employees_path, params: { q: "priya" }
+
+    body = JSON.parse(response.body)
+    assert_equal [ match.id ], body.map { |e| e["id"] }
+  end
+
+  test "manager_options excludes inactive employees" do
+    sign_in_as_hr_manager
+    create_employee(full_name: "Inactive Person", status: "inactive")
+
+    get manager_options_employees_path, params: { q: "Inactive" }
+
+    body = JSON.parse(response.body)
+    assert_equal [], body
+  end
+
+  test "manager_options excludes the given exclude_id" do
+    sign_in_as_hr_manager
+    employee = create_employee(full_name: "Self Person")
+
+    get manager_options_employees_path, params: { q: "Self", exclude_id: employee.id }
+
+    body = JSON.parse(response.body)
+    assert_equal [], body
+  end
+
+  test "manager_options caps results at 10" do
+    sign_in_as_hr_manager
+    15.times { |n| create_employee(full_name: "Candidate #{n}") }
+
+    get manager_options_employees_path, params: { q: "Candidate" }
+
+    body = JSON.parse(response.body)
+    assert_equal 10, body.length
+  end
+
+  test "manager_options with an empty q returns the first 10 active employees ordered by name" do
+    sign_in_as_hr_manager
+    create_employee(full_name: "Zeta")
+    create_employee(full_name: "Alpha")
+    create_employee(full_name: "Mid")
+    create_employee(full_name: "Inactive One", status: "inactive")
+
+    get manager_options_employees_path
+
+    body = JSON.parse(response.body)
+    assert_equal %w[Alpha Mid Zeta], body.map { |e| e["full_name"] }
+  end
+
+  test "manager_options treats % and _ in q as literal characters, not wildcards" do
+    sign_in_as_hr_manager
+    literal_match = create_employee(full_name: "100%_Match")
+    create_employee(full_name: "100xyMatch")
+
+    get manager_options_employees_path, params: { q: "100%_Match" }
+
+    body = JSON.parse(response.body)
+    assert_equal [ literal_match.id ], body.map { |e| e["id"] }
+  end
+
+  test "manager_options is rejected with 401 when unauthenticated" do
+    get manager_options_employees_path
+
+    assert_response :unauthorized
+  end
 end

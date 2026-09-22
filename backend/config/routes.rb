@@ -1,8 +1,14 @@
 Rails.application.routes.draw do
   resource :session, only: %i[show create destroy]
   resources :passwords, param: :token, only: %i[create update]
-  resources :employees, only: %i[index] do
-    get :filters, on: :collection
+  resources :employees, only: %i[index show create update] do
+    collection do
+      get :filters
+      get :manager_options
+    end
+    member do
+      patch :deactivate
+    end
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
