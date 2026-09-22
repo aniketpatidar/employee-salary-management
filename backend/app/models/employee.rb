@@ -73,31 +73,24 @@ class Employee < ApplicationRecord
   belongs_to :manager, class_name: "Employee", optional: true
   has_many :direct_reports, class_name: "Employee", foreign_key: :manager_id, inverse_of: :manager, dependent: :nullify
 
-  scope :by_department, ->(value) { where(department: value) if value.present? }
-  scope :by_country, ->(value) { where(country: value) if value.present? }
-  scope :by_role, ->(value) { where(role: value) if value.present? }
-  scope :by_employment_type, ->(value) { where(employment_type: value) if value.present? }
-  scope :by_status, ->(value) { where(status: value) if value.present? }
   scope :name_matches, ->(query) { where("full_name LIKE ? ESCAPE '\\'", "%#{sanitize_sql_like(query)}%") if query.present? }
   scope :excluding_id, ->(id) { where.not(id: id) if id.present? }
 
-  PAY_INSIGHT_COLUMNS = { "department" => "department", "country" => "country", "role" => "role" }.freeze
+  FILTER_FIELDS = %i[department country role employment_type status].freeze
+  PAY_INSIGHT_BREAKDOWNS = %w[department country role].freeze
+
+  def self.filtered(filters)
+    where(filters.to_h.symbolize_keys.slice(*FILTER_FIELDS).compact_blank)
+  end
 
   def self.pay_insights(filters, breakdown)
-    column = PAY_INSIGHT_COLUMNS.fetch(breakdown)
-    scope = pay_insights_scope(filters)
+    raise ArgumentError, "invalid breakdown: #{breakdown}" unless PAY_INSIGHT_BREAKDOWNS.include?(breakdown)
+
+    column = breakdown
+    scope = filtered(filters)
 
     merge_pay_insights(pay_insights_averages(scope, column), pay_insights_medians(scope, column), column)
   end
-
-  def self.pay_insights_scope(filters)
-    by_department(filters[:department])
-      .by_country(filters[:country])
-      .by_role(filters[:role])
-      .by_employment_type(filters[:employment_type])
-      .by_status(filters[:status])
-  end
-  private_class_method :pay_insights_scope
 
   def self.pay_insights_averages(scope, column)
     scope
@@ -154,6 +147,8 @@ class Employee < ApplicationRecord
   validate :manager_must_be_active_and_not_self, if: -> { manager_id.present? && will_save_change_to_manager_id? }
 
   before_validation :derive_currency_from_country
+
+  def deactivate = update(status: :inactive)
 
   private
     def derive_currency_from_country

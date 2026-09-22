@@ -1,26 +1,6 @@
 require "test_helper"
 
 class EmployeesControllerTest < ActionDispatch::IntegrationTest
-  def sign_in_as_hr_manager
-    User.create!(email_address: "hr.manager@acme.test", password: "SalaryAdmin!2024",
-      password_confirmation: "SalaryAdmin!2024")
-    post session_path, params: { email_address: "hr.manager@acme.test", password: "SalaryAdmin!2024" }
-  end
-
-  def create_employee(overrides = {})
-    Employee.create!({
-      full_name: "Jane Doe",
-      department: "engineering",
-      role: "software_engineer",
-      country: "united_states",
-      base_salary: 95_000,
-      employment_type: "full_time",
-      pay_frequency: "annual",
-      hire_date: Date.new(2022, 1, 15),
-      status: "active"
-    }.merge(overrides))
-  end
-
   test "unauthenticated visitors are rejected with 401 when requesting the protected employees route" do
     get employees_path
 
@@ -154,7 +134,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     get employees_path, params: { department: "not_a_real_department" }
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal "Invalid department filter value", body["error"]
   end
@@ -164,7 +144,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     get employees_path, params: { status: "terminated" }
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal "Invalid status filter value", body["error"]
   end
@@ -382,7 +362,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
       post employees_path, params: valid_employee_params(field => "")
 
-      assert_response :unprocessable_entity
+      assert_response :unprocessable_content
       body = JSON.parse(response.body)
       assert body["errors"][field.to_s].present?, "expected an error on #{field}, got #{body["errors"]}"
     end
@@ -393,7 +373,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(base_salary: "0")
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "must be greater than 0" ], body["errors"]["base_salary"]
   end
@@ -403,7 +383,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(base_salary: "-500")
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "must be greater than 0" ], body["errors"]["base_salary"]
   end
@@ -413,7 +393,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(base_salary: "abc")
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "is not a number" ], body["errors"]["base_salary"]
   end
@@ -423,7 +403,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(hire_date: (Date.current + 1).to_s)
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "can't be in the future" ], body["errors"]["hire_date"]
   end
@@ -433,7 +413,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(department: "not_a_real_department")
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert body["errors"]["department"].present?
   end
@@ -443,7 +423,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(role: "wizard")
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert body["errors"]["role"].present?
   end
@@ -453,7 +433,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(country: "narnia")
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert body["errors"]["country"].present?
   end
@@ -476,7 +456,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(manager_id: inactive_manager.id)
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "must be an active employee" ], body["errors"]["manager_id"]
   end
@@ -486,7 +466,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     post employees_path, params: valid_employee_params(manager_id: 999_999)
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "must be an active employee" ], body["errors"]["manager_id"]
   end
@@ -545,7 +525,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     patch employee_path(employee), params: { full_name: "" }
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "can't be blank" ], body["errors"]["full_name"]
   end
@@ -556,7 +536,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     patch employee_path(employee), params: { base_salary: "abc" }
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "is not a number" ], body["errors"]["base_salary"]
   end
@@ -590,11 +570,11 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
-  test "PATCH /employees/:id/deactivate sets status to inactive" do
+  test "POST /employees/:id/deactivation sets status to inactive" do
     sign_in_as_hr_manager
     employee = create_employee(status: "active")
 
-    patch deactivate_employee_path(employee)
+    post employee_deactivation_path(employee)
 
     assert_response :success
     body = JSON.parse(response.body)["employee"]
@@ -606,7 +586,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     sign_in_as_hr_manager
     employee = create_employee(status: "active")
 
-    patch deactivate_employee_path(employee)
+    post employee_deactivation_path(employee)
     get employees_path
 
     body = JSON.parse(response.body)
@@ -617,7 +597,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     sign_in_as_hr_manager
     employee = create_employee(status: "active")
 
-    patch deactivate_employee_path(employee)
+    post employee_deactivation_path(employee)
     get employees_path, params: { status: "inactive" }
 
     body = JSON.parse(response.body)
@@ -629,23 +609,23 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     manager = create_employee(status: "active")
     report = create_employee(manager_id: manager.id)
 
-    patch deactivate_employee_path(manager)
+    post employee_deactivation_path(manager)
 
     assert_equal manager.id, report.reload.manager_id
   end
 
-  test "PATCH /employees/:id/deactivate returns 404 for an unknown id" do
+  test "POST /employees/:id/deactivation returns 404 for an unknown id" do
     sign_in_as_hr_manager
 
-    patch deactivate_employee_path(999_999)
+    post employee_deactivation_path(999_999)
 
     assert_response :not_found
   end
 
-  test "PATCH /employees/:id/deactivate is rejected with 401 when unauthenticated" do
+  test "POST /employees/:id/deactivation is rejected with 401 when unauthenticated" do
     employee = create_employee
 
-    patch deactivate_employee_path(employee)
+    post employee_deactivation_path(employee)
 
     assert_response :unauthorized
   end
@@ -654,7 +634,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     sign_in_as_hr_manager
     manager = create_employee(status: "active")
     report = create_employee(manager_id: manager.id)
-    patch deactivate_employee_path(manager)
+    post employee_deactivation_path(manager)
 
     patch employee_path(report), params: { base_salary: "88000" }
 
@@ -662,13 +642,13 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 88_000, report.reload.base_salary
   end
 
-  test "PATCH /employees/:id/deactivate succeeds for a report whose manager was deactivated" do
+  test "POST /employees/:id/deactivation succeeds for a report whose manager was deactivated" do
     sign_in_as_hr_manager
     manager = create_employee(status: "active")
     report = create_employee(manager_id: manager.id)
-    patch deactivate_employee_path(manager)
+    post employee_deactivation_path(manager)
 
-    patch deactivate_employee_path(report)
+    post employee_deactivation_path(report)
 
     assert_response :success
     body = JSON.parse(response.body)
@@ -682,7 +662,7 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
 
     patch employee_path(employee), params: { manager_id: inactive_manager.id }
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     body = JSON.parse(response.body)
     assert_equal [ "must be an active employee" ], body["errors"]["manager_id"]
   end

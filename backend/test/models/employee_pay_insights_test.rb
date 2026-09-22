@@ -1,20 +1,6 @@
 require "test_helper"
 
 class EmployeePayInsightsTest < ActiveSupport::TestCase
-  def create_employee(overrides = {})
-    Employee.create!({
-      full_name: "Employee",
-      department: "engineering",
-      role: "software_engineer",
-      country: "united_states",
-      base_salary: 100,
-      employment_type: "full_time",
-      pay_frequency: "annual",
-      hire_date: Date.new(2022, 1, 15),
-      status: "active"
-    }.merge(overrides))
-  end
-
   def no_filters(overrides = {})
     { department: nil, country: nil, role: nil, employment_type: nil, status: nil }.merge(overrides)
   end

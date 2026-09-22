@@ -22,7 +22,7 @@ export function updateEmployee(id, payload) {
 }
 
 export function deactivateEmployee(id) {
-  return apiRequest(`/employees/${id}/deactivate`, { method: 'PATCH' })
+  return apiRequest(`/employees/${id}/deactivation`, { method: 'POST' })
 }
 
 export function fetchManagerOptions({ q = '', excludeId } = {}) {
