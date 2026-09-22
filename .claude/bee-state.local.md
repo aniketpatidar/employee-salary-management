@@ -5,11 +5,11 @@ risk: "MODERATE"
 discovery: "docs/specs/employee-salary-management-discovery.md"
 design_brief: ""
 boundaries: ".claude/BOUNDARIES.md"
-current_phase: "architecture decided"
+current_phase: "all slices verified, ready for review"
 phase_spec: "docs/specs/employee-salary-management-spec.md — confirmed"
-architecture: "Rails MVC + feature-folder React — ActiveRecord scopes for CRUD, Employee.pay_insights class method for aggregates"
+architecture: "Rails MVC + feature-folder React (docs/architecture.md) — ActiveRecord scopes for CRUD, Employee.pay_insights for aggregates"
 tdd_plan: "not yet written"
-current_slice: "Slice 4 — coding"
+current_slice: "all slices done"
 ---
 
 # Bee State
@@ -25,16 +25,16 @@ Risk: MODERATE
 docs/specs/employee-salary-management-discovery.md
 
 ## Current Phase
-architecture decided
+all slices verified, ready for review
 
 ## Phase Spec
 docs/specs/employee-salary-management-spec.md — confirmed
 
 ## Architecture
-Rails MVC + feature-folder React — ActiveRecord scopes for CRUD, Employee.pay_insights class method for aggregates
+Rails MVC + feature-folder React (docs/architecture.md) — ActiveRecord scopes for CRUD, Employee.pay_insights for aggregates
 
 ## Current Slice
-Slice 4 — coding
+all slices done
 
 ## TDD Plan
 not yet written
@@ -47,3 +47,4 @@ Slice 0: done
 Slice 1: done
 Slice 2: done
 Slice 3: done
+Slice 4: done

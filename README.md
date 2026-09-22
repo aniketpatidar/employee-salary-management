@@ -2,14 +2,27 @@
 
 Web app for ACME's HR Manager to search, manage and analyse salaries for 10,000 employees. Rails 8 API + React (Vite) + SQLite.
 
-- Live: https://employee-salary-management-nine.vercel.app (API: https://employee-salary-management-5xuo.onrender.com)
+- Live: https://employee-salary-management-nine.vercel.app (API: https://employee-salary-management-5xuo.onrender.com). Free tier: the first request after idle takes about a minute.
 - Login: `hr.manager@acme.test` / `SalaryAdmin!2024`
+- Demo video: `<TODO: link>`
+
+## Features
+
+- Search, filter and paginate 10,000 employees by department, country, role, employment type and status
+- Add, edit and deactivate employees; currency follows country, manager picked by name search
+- Pay insights: average and median annual salary by department, country or role, per currency
+- Single HR Manager login with password reset
 
 ## Docs
 
 - Requirements: [`docs/specs/employee-salary-management-discovery.md`](docs/specs/employee-salary-management-discovery.md)
-- Spec: [`docs/specs/employee-salary-management-spec.md`](docs/specs/employee-salary-management-spec.md)
+- Spec: [`docs/specs/employee-salary-management-spec.md`](docs/specs/employee-salary-management-spec.md) (includes out-of-scope items and known limitations)
+- Architecture: [`docs/architecture.md`](docs/architecture.md); filtering, paging and aggregation run in SQL on indexed columns
 - Decisions: [`docs/adr/`](docs/adr/)
+
+## How it was built
+
+Built with Claude Code using Bee's `/bee:sdd` spec-driven workflow: discovery → spec → architecture → one slice at a time (a coding agent, then a separate testing agent, then a verifier) → my review → commit. Every doc above is an artifact of that flow; details and what the review loop caught are in [`docs/ai-workflow.md`](docs/ai-workflow.md).
 
 ## Run locally
 
