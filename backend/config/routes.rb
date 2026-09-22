@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   resource :session, only: %i[show create destroy]
   resources :passwords, param: :token, only: %i[create update]
+  get "pay_insights", to: "pay_insights#index"
   resources :employees, only: %i[index show create update] do
     collection do
       get :filters

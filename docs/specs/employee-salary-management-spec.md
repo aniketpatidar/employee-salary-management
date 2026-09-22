@@ -79,7 +79,8 @@ Employee:
   country            (enum, fixed list — see Enum Fields below)
   currency           (enum, auto-derived from country at write time; not independently
                       settable, not exposed as an editable field)
-  base_salary        (decimal, positive)
+  base_salary        (decimal, positive, annual amount — pay_frequency only
+                      describes payout cadence, not the stored magnitude)
   employment_type    (full_time | contractor)
   pay_frequency       (monthly | annual)
   manager_id         (optional FK -> Employee.id, nullable)
@@ -168,14 +169,14 @@ PATCH /employees/:id/deactivate
 ```
 
 ## Slice 4: Aggregate Pay Insights
-- [ ] HR Manager can navigate to a Pay Insights page
-- [ ] Pay Insights page provides the same dropdown filter controls as the Employee List (department, country, role, employment type, status)
-- [ ] By default, Pay Insights includes only active employees unless the status filter is changed
-- [ ] HR Manager can choose a breakdown dimension: department, country, or role
-- [ ] Results show average and median salary per group within the chosen dimension
-- [ ] Each group's avg/median is computed per-currency, with no cross-currency conversion, summing, or blending (e.g. Engineering employees paid in EUR are shown separately from Engineering employees paid in USD — never combined into one number)
-- [ ] Aggregate results reflect only employees matching the currently applied filters
-- [ ] Shows a "no results" state when the current filters match zero employees
+- [x] HR Manager can navigate to a Pay Insights page
+- [x] Pay Insights page provides the same dropdown filter controls as the Employee List (department, country, role, employment type, status)
+- [x] By default, Pay Insights includes only active employees unless the status filter is changed
+- [x] HR Manager can choose a breakdown dimension: department, country, or role
+- [x] Results show average and median salary per group within the chosen dimension
+- [x] Each group's avg/median is computed per-currency, with no cross-currency conversion, summing, or blending (e.g. Engineering employees paid in EUR are shown separately from Engineering employees paid in USD — never combined into one number)
+- [x] Aggregate results reflect only employees matching the currently applied filters
+- [x] Shows a "no results" state when the current filters match zero employees
 
 ### API Shape
 ```

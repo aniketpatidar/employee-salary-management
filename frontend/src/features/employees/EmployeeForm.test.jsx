@@ -115,7 +115,7 @@ describe('EmployeeForm', () => {
     selectOption('Department', 'Engineering')
     selectOption('Role', 'Software Engineer')
     selectOption('Country', 'United States')
-    fireEvent.change(screen.getByLabelText('Base Salary'), { target: { value: '82000' } })
+    fireEvent.change(screen.getByLabelText('Annual base salary'), { target: { value: '82000' } })
     selectOption('Employment Type', 'Full Time')
     selectOption('Pay Frequency', 'Annual')
     fireEvent.change(screen.getByLabelText('Hire Date'), { target: { value: '2023-05-01' } })

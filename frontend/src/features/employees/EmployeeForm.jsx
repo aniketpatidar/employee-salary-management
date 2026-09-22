@@ -146,7 +146,7 @@ export function EmployeeForm({
 
       <TextField
         id="base_salary"
-        label="Base Salary"
+        label="Annual base salary"
         type="number"
         step="0.01"
         value={values.base_salary}
