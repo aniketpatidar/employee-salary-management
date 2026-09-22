@@ -8,7 +8,6 @@ class EmployeesController < ApplicationController
   ].freeze
   DEFAULT_PER_PAGE = 25
   MAX_PER_PAGE = 100
-  MANAGER_OPTIONS_LIMIT = 10
 
   def index
     invalid_field = first_invalid_filter
@@ -55,11 +54,7 @@ class EmployeesController < ApplicationController
   end
 
   def manager_options
-    employees = Employee.active
-      .name_matches(params[:q])
-      .excluding_id(params[:exclude_id])
-      .order(:full_name)
-      .limit(MANAGER_OPTIONS_LIMIT)
+    employees = Employee.manager_candidates(query: params[:q], exclude_id: params[:exclude_id])
 
     render json: employees.as_json(only: %i[id full_name department role])
   end

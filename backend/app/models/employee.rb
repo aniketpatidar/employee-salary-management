@@ -1,4 +1,6 @@
 class Employee < ApplicationRecord
+  include PayInsights
+
   enum :department, {
     engineering: 0,
     sales: 1,
@@ -75,70 +77,13 @@ class Employee < ApplicationRecord
 
   scope :name_matches, ->(query) { where("full_name LIKE ? ESCAPE '\\'", "%#{sanitize_sql_like(query)}%") if query.present? }
   scope :excluding_id, ->(id) { where.not(id: id) if id.present? }
+  scope :manager_candidates, ->(query:, exclude_id:) { active.name_matches(query).excluding_id(exclude_id).order(:full_name).limit(10) }
 
   FILTER_FIELDS = %i[department country role employment_type status].freeze
-  PAY_INSIGHT_BREAKDOWNS = %w[department country role].freeze
 
   def self.filtered(filters)
     where(filters.to_h.symbolize_keys.slice(*FILTER_FIELDS).compact_blank)
   end
-
-  def self.pay_insights(filters, breakdown)
-    raise ArgumentError, "invalid breakdown: #{breakdown}" unless PAY_INSIGHT_BREAKDOWNS.include?(breakdown)
-
-    column = breakdown
-    scope = filtered(filters)
-
-    merge_pay_insights(pay_insights_averages(scope, column), pay_insights_medians(scope, column), column)
-  end
-
-  def self.pay_insights_averages(scope, column)
-    scope
-      .group(column, :currency)
-      .pluck(column, :currency, Arel.sql("ROUND(AVG(base_salary), 2)"), Arel.sql("COUNT(*)"))
-  end
-  private_class_method :pay_insights_averages
-
-  def self.pay_insights_medians(scope, column)
-    filtered_sql = scope.select("#{column} AS group_value", :currency, :base_salary).to_sql
-
-    sql = <<~SQL
-      WITH filtered AS (#{filtered_sql}),
-      ranked AS (
-        SELECT
-          group_value,
-          currency,
-          base_salary,
-          ROW_NUMBER() OVER (PARTITION BY group_value, currency ORDER BY base_salary) AS rn,
-          COUNT(*) OVER (PARTITION BY group_value, currency) AS cnt
-        FROM filtered
-      )
-      SELECT group_value, currency, ROUND(AVG(base_salary), 2) AS median
-      FROM ranked
-      WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2) -- middle row(s); collapses to one when cnt is odd
-      GROUP BY group_value, currency
-    SQL
-
-    connection.select_all(sql).to_a
-  end
-  private_class_method :pay_insights_medians
-
-  def self.merge_pay_insights(averages, medians, column)
-    medians_by_key = medians.index_by do |row|
-      [ public_send(column.pluralize).key(row["group_value"]), currencies.key(row["currency"]) ]
-    end
-
-    averages.map do |group_value, currency, average, count|
-      {
-        group: group_value,
-        currency: currency,
-        average: average.to_f,
-        median: medians_by_key.fetch([ group_value, currency ])["median"].to_f,
-        count: count
-      }
-    end.sort_by { |row| [ row[:group], row[:currency] ] }
-  end
-  private_class_method :merge_pay_insights
 
   validates :full_name, presence: true
   validates :base_salary, presence: true, numericality: { greater_than: 0 }
