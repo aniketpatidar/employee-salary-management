@@ -16,6 +16,15 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert cookies[:session_id].present?
   end
 
+  test "the session cookie expires roughly 2 weeks from login" do
+    create_user(password: "SalaryAdmin!2024")
+
+    post session_path, params: { email_address: "hr.manager@acme.test", password: "SalaryAdmin!2024" }
+
+    expires_at = Time.httpdate(response.headers["Set-Cookie"][/expires=([^;]+)/, 1])
+    assert_in_delta 2.weeks.from_now, expires_at, 1.minute
+  end
+
   test "logging in with an incorrect password returns a generic invalid-credentials error" do
     create_user(password: "SalaryAdmin!2024")
 
