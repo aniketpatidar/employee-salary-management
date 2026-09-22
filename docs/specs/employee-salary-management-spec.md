@@ -11,7 +11,7 @@ Empty Rails 8 API app and empty React (Vite) app, wired together, both deployed 
 - [x] React app successfully calls the Rails API health-check route and displays the response (proves the two apps are wired together, not just running side by side)
 - [x] Rails API is deploy-ready (deployment config committed — e.g. Dockerfile/`render.yaml`/Procfile as appropriate for the chosen host) and documented in the README with exact deploy steps
 - [x] React app is deploy-ready (build config + env-based API base URL, no hardcoded localhost) and documented in the README with exact deploy steps
-- [ ] Developer performs the actual live deploy (external account/credentials not available to the coding agent) and adds both live URLs to the README once done
+- [x] Developer performs the actual live deploy (external account/credentials not available to the coding agent) and adds both live URLs to the README once done
 
 <!-- -------- bee-comment -------- -->
 > **@developer**: prior to feature slices, both frontend and backend apps should be up and running and deployed
@@ -24,7 +24,7 @@ The foundation everything else sits behind: a real login gate and a realistic 10
 
 - [x] HR Manager can log in with email and password
 - [x] Login form shows inline validation errors when email or password is left blank
-- [x] Shows a generic "Invalid email or password" message on failed login (does not reveal which field was wrong, no lockout/rate-limiting)
+- [x] Shows a generic "Invalid email or password" message on failed login (does not reveal which field was wrong; no account lockout, though the generator's IP-based rate limit is kept)
 - [x] Unauthenticated visitors are redirected to the login page when attempting to access any employee page
 - [x] Logged-in HR Manager can log out, ending the session (session row invalidated/deleted, cookie cleared) and returning to the login page
 - [x] HR Manager can request a password reset via email address; a reset link is generated (token-based, 15-minute expiry, per Rails 8 generator defaults)
@@ -40,7 +40,7 @@ The foundation everything else sits behind: a real login gate and a realistic 10
 - Generated via Rails 8's `bin/rails generate authentication` scaffold — not Devise, not a hand-rolled auth system, not a third-party identity provider.
 - **User model**: `has_secure_password`, `password_digest` column, unique-indexed `email_address`. Passwords are hashed with bcrypt (the generator adds the `bcrypt` gem) — plaintext passwords are never stored or logged.
 - **Session model**: database-backed. A `sessions` table stores a unique `token` (via `has_secure_token`), plus `ip_address` and `user_agent`, associated to the `User`.
-- **Session mechanism**: on login, a `Session` row is created and its token is set in a permanent, HTTP-only, signed cookie. This is **not** a JWT and **not** a bearer token in an Authorization header — it's Rails' standard cookie-store session, and the cookie value only ever contains the opaque session token, which is matched against the `sessions` table on each request via a `Current`-attributes-based authentication concern.
+- **Session mechanism**: on login, a `Session` row is created and its token is set in a signed, HTTP-only cookie that expires after 2 weeks. This is **not** a JWT and **not** a bearer token in an Authorization header — it's Rails' standard cookie-store session, and the cookie value only ever contains the opaque session token, which is matched against the `sessions` table on each request via a `Current`-attributes-based authentication concern.
 - **CSRF**: standard Rails `protect_from_forgery` / CSRF token behavior applies to the login form and any state-changing request, per Rails defaults.
 - **No OAuth, no third-party identity provider, no MFA.**
 - **No self-service signup flow — confirmed.** The generator does not scaffold account creation by default, and the developer has confirmed this matches intent: the single HR Manager account is created exclusively by the seed script, never via a signup form.
@@ -164,7 +164,7 @@ PATCH /employees/:id
 { ...any updatable field including base_salary }
 → 200 { employee } | 422 { errors }
 
-PATCH /employees/:id/deactivate
+POST /employees/:id/deactivation
 → 200 { employee: { status: "inactive" } }
 ```
 
@@ -199,7 +199,7 @@ GET /pay_insights?breakdown=department|country|role&department=&country=&role=&e
 - Bulk import / export (CSV, etc.)
 - Multi-role / permissions system — single HR Manager role only
 - **Currency conversion / normalization — the known biggest limitation of v1's Pay Insights feature.** Aggregates are computed strictly per-currency and never converted, summed, or blended across currencies in this build. This means v1 cannot answer "what's our average global salary" or support pay-equity comparisons across countries — those questions require converting every salary to a common currency first, which this build does not do. This is flagged as the clear top candidate for a v2, not a vague maybe. Building it would require: picking an exchange-rate data source (and whether it's a paid API, a periodically-updated static table, etc.), deciding on rate freshness/staleness handling (e.g. daily rates vs. real-time, what happens to historical aggregates when rates change), and defining rounding rules for converted amounts.
-- Login rate-limiting or account lockout
+- Account lockout (the generator's IP-based rate limit on login and password reset is kept)
 - OAuth / third-party identity providers / MFA
 - Self-service signup — confirmed: HR Manager account is created exclusively by the seed script, no signup form exists
 - Real/external email delivery (SMTP, third-party email service) — password-reset mailer is wired to development/console output only, no production email infrastructure

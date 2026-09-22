@@ -53,11 +53,12 @@ cd frontend && npm test
 
 ## Deploy
 
-- **Backend (Render)**: Blueprint from `render.yaml`. Set `RAILS_MASTER_KEY`. SQLite lives on a persistent disk at `/rails/storage`; the first boot seeds an empty DB automatically.
+- **Backend (Render)**: Blueprint from `render.yaml`. Set `RAILS_MASTER_KEY`. The free tier has no persistent disk, so SQLite resets whenever the service sleeps or redeploys; the entrypoint reseeds an empty DB on boot. Edits made on the live site are therefore temporary. A paid plan with a disk at `/rails/storage` would keep them.
+- **Password reset** works locally only: the live site has no mail delivery or background worker.
 - **Frontend (Vercel)**: Root Directory `frontend`, env `VITE_API_BASE_URL=/api`. `frontend/vercel.json` proxies `/api/*` to Render ([ADR 0004](docs/adr/0004-proxy-api-through-frontend-origin.md)).
 
 | Variable | App | Local | Production |
 |---|---|---|---|
 | `VITE_API_BASE_URL` | frontend | `http://localhost:3000` | `/api` |
-| `FRONTEND_ORIGIN` | backend | `http://localhost:5173` | not needed |
+| `FRONTEND_ORIGIN` | backend | `http://localhost:5173` | not needed (same-origin proxy) |
 | `RAILS_MASTER_KEY` | backend | `config/master.key` | Render env |

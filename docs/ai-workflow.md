@@ -23,7 +23,7 @@ Slice 0 (deploy the empty apps first) was my addition, so deployment problems su
 ## Where I steered
 
 - Tailwind + shadcn/ui for the UI.
-- Seed the database automatically only on first boot, so redeploys never wipe HR's edits.
+- Seed automatically only when the database is empty, so a restart never overwrites real data on a persistent disk. (The live demo runs on Render's free tier, which has no disk, so it reseeds after every sleep.)
 - `base_salary` is an annual amount, so monthly- and annually-paid staff are comparable.
 - Removed the scaffold health-check page from the UI.
 - Kept code comments and this README minimal; rationale lives in the [ADRs](adr/).

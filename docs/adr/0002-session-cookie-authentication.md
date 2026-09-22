@@ -27,9 +27,9 @@ necessary for a JSON API (the generator defaults to HTML-form-style
   practice, not the column shape. This is the generator's real, current
   output, so it's what was kept, rather than hand-adding a redundant
   `has_secure_token` column purely to match a stricter reading of the spec.
-- **Cookie**: `cookies.signed.permanent[:session_id]`, `httponly: true`,
-  `same_site: :lax`. Not a JWT, not a bearer token in an `Authorization`
-  header.
+- **Cookie**: `cookies.signed[:session_id]`, expires after 2 weeks,
+  `httponly: true`, `same_site: :lax`. Not a JWT, not a bearer token in an
+  `Authorization` header.
 - **`Authentication` concern** (`app/controllers/concerns/authentication.rb`,
   included by `ApplicationController`): `before_action :require_authentication`
   resolves the current `Session` from the signed cookie via
@@ -63,9 +63,9 @@ necessary for a JSON API (the generator defaults to HTML-form-style
 - **Dev/prod mailer delivery**: no real SMTP is required for this build
   (confirmed out of scope). `config.action_mailer.delivery_method = :file`
   in both `development` and `production`, writing each sent email to
-  `tmp/mails/<address>` as a flat file — readable locally (or via the
-  Render container's disk) without needing a gem like `letter_opener` or a
-  live SMTP relay.
+  `tmp/mails/<address>` as a flat file, readable locally without
+  `letter_opener` or SMTP. The live Render deploy runs no job worker and has
+  no persistent disk, so password reset is effectively local-only there.
 
 ## Consequences
 - Login/logout/password-reset are fully JSON in/out, matching the spec's
@@ -76,7 +76,5 @@ necessary for a JSON API (the generator defaults to HTML-form-style
   and Rails-recommended for this architecture, but should be revisited if a
   future version adds a non-SPA client or relaxes `SameSite` for
   cross-origin embedding.
-- `EmployeesController#index` exists in this slice only as a minimal stub
-  (`render json: { message: "..." }`) so the `require_authentication` /
-  401-when-unauthenticated behavior has a concrete protected route to
-  exercise before Slice 2 builds the real list/search/filter endpoint.
+- The generator's IP-based `rate_limit` on login and password-reset
+  requests is kept. It throttles brute force without locking the account.

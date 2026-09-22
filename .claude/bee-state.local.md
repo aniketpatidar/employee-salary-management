@@ -5,7 +5,7 @@ risk: "MODERATE"
 discovery: "docs/specs/employee-salary-management-discovery.md"
 design_brief: ""
 boundaries: ".claude/BOUNDARIES.md"
-current_phase: "all slices verified, ready for review"
+current_phase: "final review"
 phase_spec: "docs/specs/employee-salary-management-spec.md — confirmed"
 architecture: "Rails MVC + feature-folder React (docs/architecture.md) — ActiveRecord scopes for CRUD, Employee.pay_insights for aggregates"
 tdd_plan: "not yet written"
@@ -25,7 +25,7 @@ Risk: MODERATE
 docs/specs/employee-salary-management-discovery.md
 
 ## Current Phase
-all slices verified, ready for review
+final review
 
 ## Phase Spec
 docs/specs/employee-salary-management-spec.md — confirmed
