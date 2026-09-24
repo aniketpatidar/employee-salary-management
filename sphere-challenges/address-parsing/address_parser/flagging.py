@@ -2,8 +2,9 @@
 
 from .result import LABELS
 
-# Without these the address cannot be placed on a map, so a blank one flags it.
-REQUIRED = ("area", "city", "pin_code")
+# Without these a cleaner cannot reach the door, so a blank one flags the address.
+# Street is not here: plenty of Mumbai addresses are findable from building and area alone.
+REQUIRED = ("building_name", "flat", "area", "city", "pin_code")
 
 
 def flag_reasons(result):

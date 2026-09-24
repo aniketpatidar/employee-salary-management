@@ -20,12 +20,7 @@ def extract_pin_code(ws, result):
         found.append(pin)
         ws.claim(*m.span(1))
         result.note(f"pincode written as '{m.group()}', read as {pin}")
-
-    distinct = list(dict.fromkeys(found))
-    if len(distinct) == 1:
-        result.set("pin_code", distinct[0])
-    elif distinct:
-        result.flag("pin_code", f"more than one pincode ({', '.join(distinct)})")
+    result.settle("pin_code", found)
 
 
 def extract_city(ws, result):
@@ -33,9 +28,4 @@ def extract_city(ws, result):
     for m in CITY.finditer(ws.available()):
         found.append(CITY_NAMES[m.group().lower()])
         ws.claim(*m.span())
-
-    distinct = list(dict.fromkeys(found))
-    if len(distinct) == 1:
-        result.set("city", distinct[0])
-    elif distinct:
-        result.flag("city", f"more than one city ({', '.join(distinct)})")
+    result.settle("city", found)

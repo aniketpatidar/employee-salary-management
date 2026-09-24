@@ -91,18 +91,13 @@ def extract_area(ws, result, gazetteer=None):
     for m in matches:
         ws.claim(m.start, m.end)
 
-    names = list(dict.fromkeys(m.locality.name for m in matches))
-    if len(names) > 1:
-        result.flag("area", f"more than one area mentioned ({', '.join(names)})")
-        return
-    if not matches:
+    if not result.settle("area", [m.locality.name for m in matches]):
         return
 
     match = matches[0]
     locality = match.locality
     if match.score < 1:
         result.note(f"area '{match.phrase}' read as '{locality.name}'")
-    result.set("area", locality.name)
 
     pin = result.values.get("pin_code")
     if pin and pin not in locality.pin_codes:

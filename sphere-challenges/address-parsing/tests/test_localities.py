@@ -57,7 +57,7 @@ class AreaTest(unittest.TestCase):
     def test_two_different_areas_are_flagged_not_picked(self):
         _, result = run("Sapphire isle Powai, Silverline Estate, Cuffe Parade")
         self.assertNotIn("area", result.values)
-        self.assertIn("Powai, Cuffe Parade", result.issues[0].reason)
+        self.assertEqual(result.issues[0].reason, "more than one area (Powai, Cuffe Parade)")
 
     def test_pin_that_contradicts_the_area_is_flagged(self):
         _, result = run("Lower Parel", pin="400009")
