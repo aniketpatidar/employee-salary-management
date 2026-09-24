@@ -43,7 +43,7 @@ Fixing a spelling against a known list counts as correction. Filling a blank fie
 
 ## Data
 
-- `data/addresses.csv`: the 30 addresses, extracted programmatically from the challenge PDF.
+- `data/addresses.csv`: the 30 addresses as supplied with the brief. The parser reads only `id` and `address`; the `difficulty` column is never used, so flags come from the text alone.
 - `data/localities.csv`: a hand-compiled list of Mumbai localities and their pin codes. Treat it as a starting point: it should be checked against, or replaced by, India Post's pincode directory. Some boundaries are genuinely fuzzy. For example, Raheja Vihar is often written as "Powai" but has pin 400072, so B08 currently flags.
 
 ## Layout
